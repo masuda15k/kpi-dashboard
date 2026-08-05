@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1係 KPIダッシュボード</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --border: #e2e5ea;
+    --text: #1f2430;
+    --muted: #6b7280;
+    --accent: #1a73e8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 18px; margin: 0; }
+  #userBox { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); }
+  #userBox img { width: 28px; height: 28px; border-radius: 50%; }
+  main { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+  #loginGate {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+  }
+  #loginGate p { color: var(--muted); margin-bottom: 20px; }
+  #statusMsg { text-align: center; color: var(--muted); margin: 24px 0; }
+  #statusMsg.error { color: #d93025; }
+  .section-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 24px 0 8px;
+    color: var(--text);
+  }
+  .page-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .page-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr.header-row td {
+    font-weight: 700;
+    background: #eef2fa;
+    color: var(--muted);
+  }
+  #signInBtnHolder { display: flex; justify-content: center; }
+  button.secondary {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>1係 KPIダッシュボード</h1>
+  <div id="userBox" style="display:none;">
+    <span id="userName"></span>
+    <button class="secondary" id="signOutBtn">ログアウト</button>
+  </div>
+</header>
+
+<main>
+  <div id="loginGate">
+    <p>識学Googleアカウントでログインしてください（社外アカウントではログインできません）</p>
+    <div id="signInBtnHolder"></div>
+  </div>
+
+  <div id="statusMsg" style="display:none;"></div>
+  <div id="dashboardRoot" style="display:none;"></div>
+</main>
+
+<script>
+// ── 設定 ──────────────────────────────────────────
+const CLIENT_ID = '315650091875-4b15pp0ue46gp6b8e2uitksc5ea5h6g6.apps.googleusercontent.com';
+const SPREADSHEET_ID = '1qHftqur_IDqjc97VnfMopSnMeQj6z5U-m5x68O1Ahkw';
+const SHEET_RANGE = 'ダッシュボード!A1:H60';
+const SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+
+let tokenClient;
+let accessToken = null;
+
+window.addEventListener('load', () => {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPE,
+    callback: onTokenReceived,
+    error_callback: (err) => {
+      showStatus('ログインできませんでした：' + (err?.type || '不明なエラー'), true);
+    },
+  });
+
+  // Google標準の「Googleでログイン」ボタンではなく、シンプルなクリックボタンでトークンクライアントを起動する
+  const btn = document.createElement('button');
+  btn.textContent = 'Googleでログイン';
+  btn.style.cssText = 'background:var(--accent);color:#fff;border:none;border-radius:6px;padding:10px 20px;font-size:14px;cursor:pointer;';
+  btn.onclick = () => tokenClient.requestAccessToken({ prompt: 'consent' });
+  document.getElementById('signInBtnHolder').appendChild(btn);
+});
+
+function onTokenReceived(resp) {
+  if (resp.error) {
+    showStatus('ログインに失敗しました：' + resp.error, true);
+    return;
+  }
+  accessToken = resp.access_token;
+  document.getElementById('loginGate').style.display = 'none';
+  loadDashboard();
+}
+
+document.getElementById('signOutBtn').addEventListener('click', () => {
+  if (accessToken) {
+    google.accounts.oauth2.revoke(accessToken, () => {});
+  }
+  accessToken = null;
+  location.reload();
+});
+
+async function loadDashboard() {
+  showStatus('読み込み中...', false);
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_RANGE)}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body?.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    renderDashboard(data.values || []);
+    hideStatus();
+    document.getElementById('userBox').style.display = 'flex';
+    document.getElementById('userName').textContent = '識学アカウントでログイン中';
+  } catch (e) {
+    showStatus('データの読み込みに失敗しました：' + e.message, true);
+  }
+}
+
+function showStatus(msg, isError) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = isError ? 'error' : '';
+  el.style.display = 'block';
+}
+function hideStatus() {
+  document.getElementById('statusMsg').style.display = 'none';
+}
+
+// Google Sheetsの生データ（行の配列）を、見出し行・区切り行を推定しながらHTMLに変換する。
+// レイアウトはkpi-sheets-v3.js側の生成ロジックに追従するため固定セル番地には依存しない。
+function renderDashboard(rows) {
+  const root = document.getElementById('dashboardRoot');
+  root.innerHTML = '';
+  root.style.display = 'block';
+
+  let i = 0;
+  // 先頭2行（■を含まない）はページタイトル・サブタイトルとして特別扱い
+  if (rows[0] && rows[0][0] && !rows[0][0].startsWith('■')) {
+    const h = document.createElement('div');
+    h.className = 'page-title';
+    h.textContent = rows[0][0];
+    root.appendChild(h);
+    i = 1;
+    if (rows[1] && rows[1][0] && !rows[1][0].startsWith('■')) {
+      const sub = document.createElement('div');
+      sub.className = 'page-subtitle';
+      sub.textContent = rows[1][0];
+      root.appendChild(sub);
+      i = 2;
+    }
+  }
+
+  let currentTable = null;
+  for (; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length === 0 || (row.length === 1 && row[0] === '')) {
+      currentTable = null; // 空行＝セクション区切り
+      continue;
+    }
+    if (row[0] && row[0].startsWith('■')) {
+      const title = document.createElement('div');
+      title.className = 'section-title';
+      title.textContent = row[0];
+      root.appendChild(title);
+      currentTable = null;
+      continue;
+    }
+    if (!currentTable) {
+      currentTable = document.createElement('table');
+      root.appendChild(currentTable);
+    }
+    const tr = document.createElement('tr');
+    const looksLikeHeader = row.every(cell => !/[0-9]/.test(String(cell)));
+    if (looksLikeHeader) tr.className = 'header-row';
+    row.forEach(cell => {
+      const td = document.createElement('td');
+      td.textContent = cell;
+      tr.appendChild(td);
+    });
+    currentTable.appendChild(tr);
+  }
+}
+</script>
+
+</body>
+</html>
