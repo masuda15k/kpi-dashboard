@@ -21,17 +21,32 @@
     --warning: #b45309;   --warning-tint: #fff6e5;   --warning-border: #f3ddac;
     --critical: #dc2626;  --critical-tint: #fdecec;  --critical-border: #f6c2c2;
     --track: #edeef3;
-    --shadow-sm: 0 1px 2px rgba(20,22,31,.05), 0 1px 3px rgba(20,22,31,.06);
-    --shadow-md: 0 6px 16px -4px rgba(20,22,31,.12), 0 2px 6px -2px rgba(20,22,31,.06);
-    --radius: 14px;
+    --shadow-sm: 0 1px 2px rgba(20,22,31,.04), 0 2px 6px rgba(20,22,31,.05);
+    --shadow-md: 0 12px 28px -8px rgba(20,22,31,.16), 0 4px 10px -4px rgba(20,22,31,.08);
+    --radius: 16px;
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
     margin: 0;
-    font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+    font-family: -apple-system, "Hiragino Sans", "Yu Gothic", "Segoe UI", system-ui, sans-serif;
     background: var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    position: relative;
+    min-height: 100vh;
+  }
+  /* うっすら色づいた背景の光暈。モダンなSaaSサイトの定番の質感を、外部画像なしでCSSだけで再現 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(680px 420px at 12% -8%, rgba(79,70,229,.10), transparent 60%),
+      radial-gradient(560px 380px at 100% 6%, rgba(5,150,105,.07), transparent 55%),
+      radial-gradient(500px 360px at 50% 100%, rgba(79,70,229,.05), transparent 60%);
   }
   ::selection { background: var(--accent-tint); }
 
@@ -42,22 +57,23 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 24px;
-    background: rgba(255,255,255,.9);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    background: rgba(255,255,255,.72);
+    backdrop-filter: blur(14px) saturate(1.4);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    border-bottom: 1px solid rgba(20,22,31,.05);
   }
-  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand { display: flex; align-items: center; gap: 11px; }
   .brand-mark {
-    width: 34px; height: 34px;
+    width: 32px; height: 32px;
     border-radius: 9px;
     background: linear-gradient(135deg, var(--accent), var(--accent-dark));
     color: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 700;
-    box-shadow: var(--shadow-sm);
+    font-size: 15px; font-weight: 700;
+    box-shadow: 0 2px 6px -1px rgba(79,70,229,.4);
   }
-  header h1 { font-size: 16px; margin: 0; font-weight: 700; letter-spacing: .01em; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -.01em; color: var(--text); }
   #userBox { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
   .avatar {
     width: 26px; height: 26px; border-radius: 50%;
@@ -65,25 +81,38 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 700;
   }
-  main { max-width: 960px; margin: 28px auto 64px; padding: 0 16px; }
+  main { max-width: 980px; margin: 36px auto 80px; padding: 0 20px; position: relative; }
 
   #loginGate {
     background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    padding: 56px 24px;
+    border: 1px solid rgba(20,22,31,.055);
+    border-radius: 22px;
+    box-shadow: var(--shadow-md);
+    padding: 64px 32px;
     text-align: center;
   }
-  #loginGate p { color: var(--muted); margin-bottom: 20px; line-height: 1.7; }
+  #loginGate .gate-mark {
+    width: 56px; height: 56px;
+    margin: 0 auto 20px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700;
+    box-shadow: 0 8px 20px -6px rgba(79,70,229,.5);
+  }
+  #loginGate h2 { font-size: 19px; font-weight: 800; letter-spacing: -.01em; margin: 0 0 10px; }
+  #loginGate p { color: var(--muted); margin-bottom: 24px; line-height: 1.7; font-size: 13px; }
   #statusMsg { text-align: center; color: var(--muted); margin: 24px 0; font-size: 13px; }
   #statusMsg.error { color: var(--critical); }
 
   .section-title {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
-    margin: 28px 0 10px;
-    color: var(--text);
+    margin: 34px 0 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .07em;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -91,9 +120,18 @@
   .section-title::before {
     content: '';
     display: inline-block;
-    width: 4px; height: 14px;
+    width: 14px; height: 2px;
     border-radius: 2px;
     background: var(--accent);
+  }
+
+  /* ── カード出現アニメーション ── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .reveal {
+    animation: fadeInUp .5s cubic-bezier(.16,1,.3,1) both;
   }
 
   table {
@@ -148,7 +186,7 @@
 
   #inputForm {
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(20,22,31,.055);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
     padding: 20px 22px;
@@ -208,7 +246,7 @@
 
   .chart-card {
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(20,22,31,.055);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
     padding: 16px 18px 12px;
@@ -237,19 +275,37 @@
 
   /* ── ヒーロー ── */
   .hero {
+    position: relative;
+    overflow: hidden;
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
     color: #fff;
-    border-radius: 18px;
-    padding: 26px 28px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-md);
+    border-radius: 22px;
+    padding: 34px 36px;
+    margin-bottom: 28px;
+    box-shadow: 0 16px 40px -12px rgba(67,56,202,.45);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: 24px;
     flex-wrap: wrap;
   }
-  .hero-text h2 { font-size: 18px; margin: 0 0 10px; font-weight: 700; }
+  .hero::after {
+    /* 右上に淡い光沢を1つ置くだけで、単色グラデよりも質感が出る */
+    content: '';
+    position: absolute;
+    top: -60%; right: -10%;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(255,255,255,.16), transparent 65%);
+    pointer-events: none;
+  }
+  .hero-text { position: relative; }
+  .hero-text h2 {
+    font-size: 24px;
+    margin: 0 0 14px;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1.3;
+  }
   .hero .period {
     font-size: 12px;
     display: flex;
@@ -257,14 +313,15 @@
     gap: 8px;
   }
   .hero .period span {
-    background: rgba(255,255,255,.16);
-    border: 1px solid rgba(255,255,255,.28);
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.22);
     border-radius: 999px;
-    padding: 4px 12px;
+    padding: 5px 13px;
+    font-weight: 500;
   }
-  .hero-ring { flex: 0 0 auto; text-align: center; }
+  .hero-ring { position: relative; flex: 0 0 auto; text-align: center; }
   .hero-ring svg { display: block; }
-  .hero-ring .ring-label { font-size: 11px; opacity: .85; margin-top: 4px; }
+  .hero-ring .ring-label { font-size: 11px; opacity: .85; margin-top: 6px; font-weight: 500; }
 
   /* ── 目標ギャップのタイル ── */
   .tile-grid {
@@ -275,13 +332,13 @@
   }
   .tile {
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(20,22,31,.055);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
     padding: 16px 18px 18px;
-    transition: box-shadow .15s, transform .15s;
+    transition: box-shadow .25s cubic-bezier(.16,1,.3,1), transform .25s cubic-bezier(.16,1,.3,1);
   }
-  .tile:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .tile:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
   .tile-head {
     display: flex;
     justify-content: space-between;
@@ -294,8 +351,18 @@
     font-size: 11px;
     font-weight: 700;
     white-space: nowrap;
-    padding: 3px 10px;
+    padding: 3px 10px 3px 8px;
     border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .tile-status::before, .member-pace::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: 0 0 auto;
   }
   .tile-status.good { background: var(--good-tint); color: var(--good); }
   .tile-status.warning { background: var(--warning-tint); color: var(--warning); }
@@ -341,7 +408,7 @@
   /* ── ファネル ── */
   .funnel-card {
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(20,22,31,.055);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
     padding: 20px 22px 14px;
@@ -387,13 +454,13 @@
   }
   .member-card {
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(20,22,31,.055);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
     padding: 16px 18px;
-    transition: box-shadow .15s, transform .15s;
+    transition: box-shadow .25s cubic-bezier(.16,1,.3,1), transform .25s cubic-bezier(.16,1,.3,1);
   }
-  .member-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .member-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
   .member-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
   .member-avatar {
     width: 34px; height: 34px; border-radius: 50%;
@@ -404,8 +471,11 @@
   .member-name { font-size: 14px; font-weight: 700; flex: 1; }
   .member-pace {
     font-size: 11px; font-weight: 700;
-    padding: 3px 9px; border-radius: 999px;
+    padding: 3px 9px 3px 7px; border-radius: 999px;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
   }
   .member-pace.good { background: var(--good-tint); color: var(--good); }
   .member-pace.warning { background: var(--warning-tint); color: var(--warning); }
@@ -448,15 +518,15 @@
   }
   .action-ico {
     flex: 0 0 auto;
-    width: 22px; height: 22px;
+    width: 20px; height: 20px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 12px;
-    margin-top: 1px;
+    margin-top: 2px;
   }
-  .action-item.critical .action-ico { background: var(--critical-tint); }
-  .action-item.warning .action-ico { background: var(--warning-tint); }
-  .action-item.good .action-ico { background: var(--good-tint); }
+  .action-ico::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .action-item.critical .action-ico, .action-ico.critical { background: var(--critical-tint); color: var(--critical); }
+  .action-item.warning .action-ico, .action-ico.warning { background: var(--warning-tint); color: var(--warning); }
+  .action-item.good .action-ico, .action-ico.good { background: var(--good-tint); color: var(--good); }
   .action-text { flex: 1; line-height: 1.5; }
 
   .notice {
@@ -500,7 +570,9 @@
 
 <main>
   <div id="loginGate">
-    <p>識学Googleアカウントでログインしてください（社外アカウントではログインできません）</p>
+    <div class="gate-mark">識</div>
+    <h2>1係 KPIダッシュボード</h2>
+    <p>識学Googleアカウントでログインしてください<br>（社外アカウントではログインできません）</p>
     <div id="signInBtnHolder"></div>
   </div>
 
@@ -569,7 +641,6 @@ window.addEventListener('load', () => {
   // Google標準の「Googleでログイン」ボタンではなく、シンプルなクリックボタンでトークンクライアントを起動する
   const btn = document.createElement('button');
   btn.textContent = 'Googleでログイン';
-  btn.style.cssText = 'background:var(--accent);color:#fff;border:none;border-radius:6px;padding:10px 20px;font-size:14px;cursor:pointer;';
   btn.onclick = () => tokenClient.requestAccessToken({ prompt: 'consent' });
   document.getElementById('signInBtnHolder').appendChild(btn);
 });
@@ -786,6 +857,16 @@ function renderDashboard(rows) {
   }
 
   sections.forEach(sec => renderSection(root, sec));
+  reveal(root);
+}
+
+// カード群を少しずつ遅らせてフェードインさせる（一枚岩の表示より視覚的な質感が出る）
+function reveal(root) {
+  const els = root.querySelectorAll('.hero, .tile, .funnel-card, .member-card, .action-item, .notice, .chart-card');
+  els.forEach((el, i) => {
+    el.style.animationDelay = Math.min(i * 30, 360) + 'ms';
+    el.classList.add('reveal');
+  });
 }
 
 function renderSection(root, sec) {
@@ -829,6 +910,10 @@ function toneColor(tone) {
 function pct(v) {
   const n = parseFloat(String(v).replace('%', ''));
   return isFinite(n) ? n : null;
+}
+// 信号の意味は色付きドット＋背景色バッジ側で表現するので、テキスト側の絵文字は除いて読みやすくする
+function stripEmoji(text) {
+  return String(text || '').replace(/[🔴🟡🟢⚠️⚠]\s*/g, '').trim();
 }
 // ヒーロー用の円形プログレスリング（純SVG・外部ライブラリなし）
 function buildProgressRing(percent, label) {
@@ -885,7 +970,7 @@ function renderGoalTiles(root, sec) {
     name.textContent = r[0];
     const status = document.createElement('span');
     status.className = 'tile-status ' + tone;
-    status.textContent = r[iPace] || '';
+    status.textContent = stripEmoji(r[iPace]);
     head.append(name, status);
 
     const val = document.createElement('div');
@@ -1006,7 +1091,7 @@ function renderMemberCards(root, sec) {
     nameEl.textContent = m;
     const paceEl = document.createElement('span');
     paceEl.className = 'member-pace ' + tone;
-    paceEl.textContent = paceText;
+    paceEl.textContent = stripEmoji(paceText);
     head.append(avatar, nameEl, paceEl);
     card.appendChild(head);
 
@@ -1061,9 +1146,7 @@ function renderMemberCards(root, sec) {
   root.appendChild(grid);
 }
 
-const TONE_ICON = { critical: '🔴', warning: '🟡', good: '🟢' };
-
-// ■④ 今週のアクション → 重要度で色分けしたリスト（絵文字はアイコンバッジに変換し、本文からは取り除く）
+// ■④ 今週のアクション → 重要度で色分けしたリスト（絵文字はドット付きアイコンバッジに置き換える）
 function renderActions(root, sec) {
   addTitle(root, sec.title);
   const list = document.createElement('div');
@@ -1076,10 +1159,9 @@ function renderActions(root, sec) {
     item.className = 'action-item ' + tone;
     const ico = document.createElement('span');
     ico.className = 'action-ico';
-    ico.textContent = TONE_ICON[tone];
     const body = document.createElement('span');
     body.className = 'action-text';
-    body.textContent = text.replace(/[🔴🟡🟢]\s*/g, '');
+    body.textContent = stripEmoji(text);
     item.append(ico, body);
     list.appendChild(item);
   });
@@ -1093,9 +1175,9 @@ function renderNotice(root, sec) {
     const el = document.createElement('div');
     el.className = 'notice';
     const ico = document.createElement('span');
-    ico.textContent = '⚠️';
+    ico.className = 'action-ico warning';
     const body = document.createElement('span');
-    body.textContent = r.join(' ').replace(/^⚠\s*/, '');
+    body.textContent = stripEmoji(r.join(' '));
     el.append(ico, body);
     root.appendChild(el);
   });
