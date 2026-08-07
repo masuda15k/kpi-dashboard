@@ -163,6 +163,174 @@
     fill: #0b0b0b;
     font-weight: 600;
   }
+
+  /* ── 状態色（信号）。アイコン＋ラベルと必ずセットで使い、色だけで意味を持たせない ── */
+  :root {
+    --good: #0ca30c;
+    --warning: #fab219;
+    --critical: #d03b3b;
+    --track: #e8eaee;
+  }
+
+  /* ── ヒーロー（見出し＋期間） ── */
+  .hero { margin-bottom: 20px; }
+  .hero h2 { font-size: 20px; margin: 0 0 6px; }
+  .hero .period {
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+  }
+
+  /* ── 目標ギャップのタイル ── */
+  .tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .tile {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px 16px;
+  }
+  .tile-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .tile-name { font-size: 13px; font-weight: 700; }
+  .tile-status { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .tile-value {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .tile-value .of {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .bar-track {
+    height: 8px;
+    background: var(--track);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0 8px;
+  }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .tile-meta {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+  .delta-behind { color: var(--critical); font-weight: 600; }
+  .delta-ahead { color: var(--good); font-weight: 600; }
+
+  /* ── ファネル ── */
+  .funnel {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+  }
+  .funnel-step { text-align: center; min-width: 74px; }
+  .funnel-step .n { font-size: 22px; font-weight: 700; }
+  .funnel-step .l { font-size: 12px; color: var(--muted); }
+  .funnel-arrow {
+    align-self: center;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    min-width: 62px;
+  }
+  .funnel-arrow .rate { display: block; font-weight: 600; color: var(--text); }
+
+  /* ── メンバーカード ── */
+  .member-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .member-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .member-card h3 {
+    font-size: 14px;
+    margin: 0 0 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .member-card .pace { font-size: 12px; font-weight: 400; color: var(--muted); }
+  .metric-line { margin-top: 10px; }
+  .metric-line .row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .metric-line .row b { color: var(--text); font-weight: 600; }
+  .metric-line .bar-track { height: 6px; margin: 0; }
+  .member-foot {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .member-foot b { color: var(--text); }
+
+  /* ── アクション・警告 ── */
+  .action-list { margin-bottom: 8px; }
+  .action-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--muted);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .action-item.critical { border-left-color: var(--critical); }
+  .action-item.warning { border-left-color: var(--warning); }
+  .action-item.good { border-left-color: var(--good); }
+  .notice {
+    background: #fff8e6;
+    border: 1px solid #f3dfa8;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  /* 横長の表は表の中だけスクロールさせ、ページ本体は横スクロールさせない */
+  .table-scroll {
+    overflow-x: auto;
+    margin-bottom: 4px;
+  }
+  .table-scroll table { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -404,56 +572,347 @@ function hideStatus() {
   document.getElementById('statusMsg').style.display = 'none';
 }
 
-// Google Sheetsの生データ（行の配列）を、見出し行・区切り行を推定しながらHTMLに変換する。
-// レイアウトはkpi-sheets-v3.js側の生成ロジックに追従するため固定セル番地には依存しない。
+// Google Sheetsの生データを ■見出し ごとのセクションに切り分け、
+// 見出しに応じた専用の描画（タイル・ファネル・カード等）に振り分ける。
+// 未知の見出しは従来どおり表として描画するので、スプシ側にセクションが増えても壊れない。
 function renderDashboard(rows) {
   const root = document.getElementById('dashboardRoot');
   root.innerHTML = '';
   root.style.display = 'block';
 
   let i = 0;
-  // 先頭2行（■を含まない）はページタイトル・サブタイトルとして特別扱い
+  // 先頭の非■行はヒーロー（タイトル＋期間）として扱う
   if (rows[0] && rows[0][0] && !rows[0][0].startsWith('■')) {
-    const h = document.createElement('div');
-    h.className = 'page-title';
+    const hero = document.createElement('div');
+    hero.className = 'hero';
+    const h = document.createElement('h2');
     h.textContent = rows[0][0];
-    root.appendChild(h);
+    hero.appendChild(h);
     i = 1;
     if (rows[1] && rows[1][0] && !rows[1][0].startsWith('■')) {
-      const sub = document.createElement('div');
-      sub.className = 'page-subtitle';
-      sub.textContent = rows[1][0];
-      root.appendChild(sub);
+      const p = document.createElement('div');
+      p.className = 'period';
+      // 「／」区切りの期間表記を項目ごとに分けて折り返しやすくする
+      rows[1][0].split('／').forEach(part => {
+        const span = document.createElement('span');
+        span.textContent = part.trim();
+        p.appendChild(span);
+      });
+      hero.appendChild(p);
       i = 2;
     }
+    root.appendChild(hero);
   }
 
-  let currentTable = null;
+  // ■見出しごとにセクション分割（空行は区切りとして保持）
+  const sections = [];
+  let cur = null;
   for (; i < rows.length; i++) {
     const row = rows[i];
-    if (!row || row.length === 0 || (row.length === 1 && row[0] === '')) {
-      currentTable = null; // 空行＝セクション区切り
+    const first = (row && row[0]) ? String(row[0]) : '';
+    if (first.startsWith('■')) {
+      cur = { title: first, rows: [] };
+      sections.push(cur);
       continue;
     }
-    if (row[0] && row[0].startsWith('■ グラフ用データ')) {
-      // このセクションはSheets側では埋め込みグラフの元データ（値のみでは画像を再現できない）。
-      // 同じ数値からこちら側で実際の棒グラフを描画し、末尾の「■ グラフ（自動生成...）」行はスキップする。
-      i = renderChartDataSection(root, rows, i + 1);
-      currentTable = null;
-      continue;
+    if (!cur) continue;
+    cur.rows.push(row && row.length ? row : []);
+  }
+
+  sections.forEach(sec => renderSection(root, sec));
+}
+
+function renderSection(root, sec) {
+  const t = sec.title;
+  // Sheets側の埋め込みグラフへの案内行は、HTML側で実グラフを描くため不要
+  if (t.startsWith('■ グラフ（')) return;
+
+  if (t.startsWith('■①') && !t.startsWith("■①'")) return renderGoalTiles(root, sec);
+  if (t.startsWith('■②')) return renderFunnel(root, sec);
+  if (t.startsWith('■③')) return renderMemberCards(root, sec);
+  if (t.startsWith('■④')) return renderActions(root, sec);
+  if (t.startsWith('■⑤')) return renderNotice(root, sec);
+  if (t.startsWith('■ グラフ用データ')) return renderCharts(root, sec);
+  return renderGenericTable(root, sec);
+}
+
+function addTitle(root, text) {
+  const el = document.createElement('div');
+  el.className = 'section-title';
+  el.textContent = text;
+  root.appendChild(el);
+  return el;
+}
+
+function dataRowsOf(sec) { return sec.rows.filter(r => r && r.length); }
+
+// ペース欄の絵文字から状態を判定する（色だけに意味を持たせず、絵文字＋文言もそのまま表示する）
+function toneOf(text) {
+  const s = String(text || '');
+  if (s.includes('🔴')) return 'critical';
+  if (s.includes('🟡')) return 'warning';
+  if (s.includes('🟢')) return 'good';
+  return '';
+}
+function toneColor(tone) {
+  return tone === 'critical' ? 'var(--critical)'
+       : tone === 'warning' ? 'var(--warning)'
+       : tone === 'good' ? 'var(--good)'
+       : 'var(--muted)';
+}
+function pct(v) {
+  const n = parseFloat(String(v).replace('%', ''));
+  return isFinite(n) ? n : null;
+}
+function makeBar(ratio, color) {
+  const track = document.createElement('div');
+  track.className = 'bar-track';
+  const fill = document.createElement('div');
+  fill.className = 'bar-fill';
+  fill.style.width = Math.max(0, Math.min(100, ratio)) + '%';
+  fill.style.background = color;
+  track.appendChild(fill);
+  return track;
+}
+
+// ■① ゴールとのギャップ → 指標ごとの大きな数字＋達成率バー
+function renderGoalTiles(root, sec) {
+  addTitle(root, sec.title);
+  const rows = dataRowsOf(sec);
+  const header = rows[0] || [];
+  const col = name => header.indexOf(name);
+  const iResult = col('実績'), iMust = col('MUST'), iRate = col('達成率');
+  const iPace = col('ペース'), iLand = col('着地見込み'), iDiff = col('過不足'), iNote = col('補足');
+
+  const grid = document.createElement('div');
+  grid.className = 'tile-grid';
+
+  rows.slice(1).forEach(r => {
+    const tone = toneOf(r[iPace]);
+    const rate = pct(r[iRate]);
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+
+    const head = document.createElement('div');
+    head.className = 'tile-head';
+    const name = document.createElement('span');
+    name.className = 'tile-name';
+    name.textContent = r[0];
+    const status = document.createElement('span');
+    status.className = 'tile-status';
+    status.textContent = r[iPace] || '';
+    head.append(name, status);
+
+    const val = document.createElement('div');
+    val.className = 'tile-value';
+    val.textContent = r[iResult] || '';
+    if (iMust >= 0 && r[iMust]) {
+      const of = document.createElement('span');
+      of.className = 'of';
+      of.textContent = `/ ${r[iMust]}（MUST）`;
+      val.appendChild(of);
     }
-    if (row[0] && row[0].startsWith('■')) {
-      const title = document.createElement('div');
-      title.className = 'section-title';
-      title.textContent = row[0];
-      root.appendChild(title);
-      currentTable = null;
-      continue;
+
+    tile.append(head, val);
+    if (rate !== null) tile.appendChild(makeBar(rate, toneColor(tone)));
+
+    const meta = document.createElement('div');
+    meta.className = 'tile-meta';
+    if (rate !== null) {
+      const s = document.createElement('span');
+      s.textContent = `達成率 ${r[iRate]}`;
+      meta.appendChild(s);
     }
-    if (!currentTable) {
-      currentTable = document.createElement('table');
-      root.appendChild(currentTable);
+    if (iDiff >= 0 && r[iDiff]) {
+      const s = document.createElement('span');
+      const behind = String(r[iDiff]).trim().startsWith('-');
+      s.className = behind ? 'delta-behind' : 'delta-ahead';
+      s.textContent = r[iDiff];
+      meta.appendChild(s);
     }
+    if (iLand >= 0 && r[iLand]) {
+      const s = document.createElement('span');
+      s.textContent = `着地見込み ${r[iLand]}`;
+      meta.appendChild(s);
+    }
+    tile.appendChild(meta);
+
+    if (iNote >= 0 && r[iNote]) {
+      const note = document.createElement('div');
+      note.className = 'tile-meta';
+      note.style.marginTop = '6px';
+      note.textContent = r[iNote];
+      tile.appendChild(note);
+    }
+    grid.appendChild(tile);
+  });
+
+  root.appendChild(grid);
+}
+
+// ■② ファネル → 件数と転換率を横並びで。パイプライン在庫行はそのまま表で残す
+function renderFunnel(root, sec) {
+  addTitle(root, sec.title);
+  const rows = dataRowsOf(sec);
+  const header = rows[0] || [];
+  const values = rows[1] || [];
+
+  if (header.length && values.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'funnel';
+    // 見出しは [段階, 転換率, 段階, 転換率, ...] の交互配置
+    header.forEach((label, idx) => {
+      const el = document.createElement('div');
+      if (idx % 2 === 0) {
+        el.className = 'funnel-step';
+        el.innerHTML = `<div class="n"></div><div class="l"></div>`;
+        el.querySelector('.n').textContent = values[idx] ?? '';
+        el.querySelector('.l').textContent = label;
+      } else {
+        el.className = 'funnel-arrow';
+        el.innerHTML = `<span class="rate"></span>↓`;
+        el.querySelector('.rate').textContent = values[idx] ?? '';
+        el.title = label;
+      }
+      wrap.appendChild(el);
+    });
+    root.appendChild(wrap);
+  }
+
+  const rest = rows.slice(2);
+  if (rest.length) root.appendChild(buildTable(rest));
+}
+
+// ■③ メンバー別ペース → 1人1カード。実績/目標を進捗バーで
+function renderMemberCards(root, sec) {
+  addTitle(root, sec.title);
+  const rows = dataRowsOf(sec);
+  const header = rows[0] || [];
+  const members = header.slice(1);
+  const byLabel = {};
+  rows.slice(1).forEach(r => { byLabel[r[0]] = r.slice(1); });
+
+  const grid = document.createElement('div');
+  grid.className = 'member-grid';
+
+  members.forEach((m, mi) => {
+    const card = document.createElement('div');
+    card.className = 'member-card';
+
+    const paceText = (byLabel['ペース'] || [])[mi] || '';
+    const h = document.createElement('h3');
+    const nameEl = document.createElement('span');
+    nameEl.textContent = m;
+    const paceEl = document.createElement('span');
+    paceEl.className = 'pace';
+    paceEl.textContent = paceText;
+    h.append(nameEl, paceEl);
+    card.appendChild(h);
+
+    // 「実績 / 目標」形式の行だけ進捗バーにする。
+    // 「今週 商談/P2」のように見出し自体が "/" を含む行は別々の2指標を並べたものなので除外する。
+    const isProgressRow = (label, cell) =>
+      !label.includes('/') && /^\s*\d+\s*\/\s*\d+\s*$/.test(cell);
+
+    Object.keys(byLabel).forEach(label => {
+      if (label === 'ペース') return;
+      const cell = String(byLabel[label][mi] ?? '');
+      if (!isProgressRow(label, cell)) return;
+      const m2 = cell.match(/^\s*(\d+)\s*\/\s*(\d+)\s*$/);
+      const [, doneStr, targetStr] = m2;
+      const done = Number(doneStr), target = Number(targetStr);
+      const ratio = target > 0 ? (done / target) * 100 : 0;
+
+      const line = document.createElement('div');
+      line.className = 'metric-line';
+      const row = document.createElement('div');
+      row.className = 'row';
+      const l = document.createElement('span');
+      l.textContent = label;
+      const v = document.createElement('span');
+      v.innerHTML = `<b></b> / ${target}`;
+      v.querySelector('b').textContent = done;
+      row.append(l, v);
+      line.appendChild(row);
+      line.appendChild(makeBar(ratio, toneColor(toneOf(paceText)) ));
+      card.appendChild(line);
+    });
+
+    // 残りの自由書式の行はカード下部にまとめる
+    const foot = document.createElement('div');
+    foot.className = 'member-foot';
+    let hasFoot = false;
+    Object.keys(byLabel).forEach(label => {
+      if (label === 'ペース') return;
+      const cell = String(byLabel[label][mi] ?? '');
+      if (isProgressRow(label, cell)) return; // 上で進捗バーにした行は重複表示しない
+      const s = document.createElement('span');
+      s.innerHTML = `${label} <b></b>`;
+      s.querySelector('b').textContent = cell;
+      foot.appendChild(s);
+      hasFoot = true;
+    });
+    if (hasFoot) card.appendChild(foot);
+
+    grid.appendChild(card);
+  });
+
+  root.appendChild(grid);
+}
+
+// ■④ 今週のアクション → 重要度で色分けしたリスト
+function renderActions(root, sec) {
+  addTitle(root, sec.title);
+  const list = document.createElement('div');
+  list.className = 'action-list';
+  dataRowsOf(sec).forEach(r => {
+    // 先頭が連番のみの列なら本文は2列目
+    const text = (r.length > 1 && /^\d+$/.test(String(r[0]).trim())) ? r.slice(1).join(' ') : r.join(' ');
+    const item = document.createElement('div');
+    item.className = 'action-item ' + toneOf(text);
+    item.textContent = text;
+    list.appendChild(item);
+  });
+  root.appendChild(list);
+}
+
+// ■⑤ データ品質サマリー → 注意バナー
+function renderNotice(root, sec) {
+  addTitle(root, sec.title);
+  dataRowsOf(sec).forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'notice';
+    el.textContent = r.join(' ');
+    root.appendChild(el);
+  });
+}
+
+// ■ グラフ用データ → 空行区切りのグループごとに棒グラフ化
+function renderCharts(root, sec) {
+  addTitle(root, '■⑥ グラフ');
+  let group = [];
+  const flush = () => {
+    if (group.length >= 2) root.appendChild(buildGroupedBarChart(group[0], group.slice(1)));
+    group = [];
+  };
+  sec.rows.forEach(r => {
+    if (!r || !r.length) { flush(); return; }
+    group.push(r);
+  });
+  flush();
+}
+
+function renderGenericTable(root, sec) {
+  addTitle(root, sec.title);
+  const rows = dataRowsOf(sec);
+  if (rows.length) root.appendChild(buildTable(rows));
+}
+
+function buildTable(rows) {
+  const scroll = document.createElement('div');
+  scroll.className = 'table-scroll';
+  const table = document.createElement('table');
+  rows.forEach(row => {
     const tr = document.createElement('tr');
     const looksLikeHeader = row.every(cell => !/[0-9]/.test(String(cell)));
     if (looksLikeHeader) tr.className = 'header-row';
@@ -462,45 +921,10 @@ function renderDashboard(rows) {
       td.textContent = cell;
       tr.appendChild(td);
     });
-    currentTable.appendChild(tr);
-  }
-}
-
-// 「■ グラフ用データ」以降を、空行区切りのグループごとに棒グラフとして描画する。
-// 「■ グラフ（自動生成...）」という最終行に当たったら終了。戻り値＝処理済みの最終行index。
-function renderChartDataSection(root, rows, startIdx) {
-  const title = document.createElement('div');
-  title.className = 'section-title';
-  title.textContent = '■⑥ グラフ';
-  root.appendChild(title);
-
-  let i = startIdx;
-  let group = [];
-  const flushGroup = () => {
-    if (group.length >= 2) { // 見出し行＋データ行が最低1行
-      root.appendChild(buildGroupedBarChart(group[0], group.slice(1)));
-    }
-    group = [];
-  };
-
-  for (; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row || row.length === 0 || (row.length === 1 && row[0] === '')) {
-      flushGroup();
-      continue;
-    }
-    if (row[0] && row[0].startsWith('■ グラフ（')) {
-      flushGroup();
-      return i; // 埋め込みグラフの案内行自体は不要なので描画せずスキップ
-    }
-    if (row[0] && row[0].startsWith('■')) {
-      flushGroup();
-      return i - 1; // 想定外の次セクションに当たった場合は1つ戻して呼び出し元に処理を戻す
-    }
-    group.push(row);
-  }
-  flushGroup();
-  return i;
+    table.appendChild(tr);
+  });
+  scroll.appendChild(table);
+  return scroll;
 }
 
 function escapeXml(s) {
