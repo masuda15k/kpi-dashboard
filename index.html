@@ -7,23 +7,27 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
-    color-scheme: light;
-    --bg: #f3f4f8;
-    --card: #ffffff;
-    --border: #e7e8f0;
-    --text: #14161f;
-    --muted: #6b7280;
-    --muted-2: #9aa0ac;
-    --accent: #4f46e5;
-    --accent-dark: #4338ca;
-    --accent-tint: #eef0ff;
-    --good: #059669;      --good-tint: #e7f7f1;      --good-border: #b7e6d3;
-    --warning: #b45309;   --warning-tint: #fff6e5;   --warning-border: #f3ddac;
-    --critical: #dc2626;  --critical-tint: #fdecec;  --critical-border: #f6c2c2;
-    --track: #edeef3;
-    --shadow-sm: 0 1px 2px rgba(20,22,31,.04), 0 2px 6px rgba(20,22,31,.05);
-    --shadow-md: 0 12px 28px -8px rgba(20,22,31,.16), 0 4px 10px -4px rgba(20,22,31,.08);
-    --radius: 16px;
+    color-scheme: dark;
+    /* 識学の紺#0B1644を土台に、ほぼ黒に近いところまで沈めた背景。赤は最小限、金は使わない */
+    --bg: #0a0d16;
+    --card: #12151f;
+    --card-2: #171a26;
+    --border: rgba(255,255,255,.08);
+    --ink: #050710;
+    --text: #eef0f4;
+    --muted: #8a8e9c;
+    --muted-2: #5c606d;
+    --accent: #aab4e8;
+    --accent-dark: #7b86c4;
+    --accent-tint: rgba(170,180,232,.14);
+    --good: #4fae82;       --good-tint: rgba(79,174,130,.13);      --good-border: rgba(79,174,130,.3);
+    --warning: #c9a24a;    --warning-tint: rgba(201,162,74,.13);   --warning-border: rgba(201,162,74,.3);
+    --critical: #c85c5c;   --critical-tint: rgba(200,92,92,.14);   --critical-border: rgba(200,92,92,.32);
+    --track: rgba(255,255,255,.08);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+    --shadow-md: 0 16px 32px -12px rgba(0,0,0,.55);
+    --radius: 10px;
+    --display-font: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -36,17 +40,6 @@
     text-rendering: optimizeLegibility;
     position: relative;
     min-height: 100vh;
-  }
-  /* うっすら色づいた背景の光暈。モダンなSaaSサイトの定番の質感を、外部画像なしでCSSだけで再現 */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background:
-      radial-gradient(680px 420px at 12% -8%, rgba(79,70,229,.10), transparent 60%),
-      radial-gradient(560px 380px at 100% 6%, rgba(5,150,105,.07), transparent 55%),
-      radial-gradient(500px 360px at 50% 100%, rgba(79,70,229,.05), transparent 60%);
   }
   ::selection { background: var(--accent-tint); }
 
@@ -65,15 +58,15 @@
   }
   .brand { display: flex; align-items: center; gap: 11px; }
   .brand-mark {
-    width: 32px; height: 32px;
-    border-radius: 9px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-    color: #fff;
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    color: var(--text);
     display: flex; align-items: center; justify-content: center;
-    font-size: 15px; font-weight: 700;
-    box-shadow: 0 2px 6px -1px rgba(79,70,229,.4);
+    font-size: 14px; font-weight: 400;
+    font-family: var(--display-font);
   }
-  header h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -.01em; color: var(--text); }
+  header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: .01em; color: var(--text); }
   #userBox { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
   .avatar {
     width: 26px; height: 26px; border-radius: 50%;
@@ -81,57 +74,60 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 700;
   }
-  main { max-width: 980px; margin: 36px auto 80px; padding: 0 20px; position: relative; }
+  /* 間（ま）：余白を広く取る。左右の広い余白そのものが装飾になる */
+  main { max-width: 900px; margin: 56px auto 120px; padding: 0 24px; position: relative; }
 
   #loginGate {
     background: var(--card);
-    border: 1px solid rgba(20,22,31,.055);
-    border-radius: 22px;
-    box-shadow: var(--shadow-md);
-    padding: 64px 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 96px 32px;
     text-align: center;
   }
   #loginGate .gate-mark {
-    width: 56px; height: 56px;
-    margin: 0 auto 20px;
-    border-radius: 15px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-    color: #fff;
+    width: 52px; height: 52px;
+    margin: 0 auto 28px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    color: var(--text);
     display: flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 700;
-    box-shadow: 0 8px 20px -6px rgba(79,70,229,.5);
+    font-size: 22px; font-weight: 400;
+    font-family: var(--display-font);
   }
-  #loginGate h2 { font-size: 19px; font-weight: 800; letter-spacing: -.01em; margin: 0 0 10px; }
-  #loginGate p { color: var(--muted); margin-bottom: 24px; line-height: 1.7; font-size: 13px; }
+  #loginGate h2 { font-family: var(--display-font); font-size: 22px; font-weight: 400; letter-spacing: 0; margin: 0 0 14px; }
+  #loginGate p { color: var(--muted); margin-bottom: 32px; line-height: 1.8; font-size: 13px; }
   #statusMsg { text-align: center; color: var(--muted); margin: 24px 0; font-size: 13px; }
   #statusMsg.error { color: var(--critical); }
 
   .section-title {
-    font-size: 12px;
-    font-weight: 700;
-    margin: 34px 0 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin: 56px 0 18px;
     color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: .07em;
+    letter-spacing: .1em;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
   .section-title::before {
+    /* 識学の組織図が「同格を水平線で揃える」作法を借りた、細い基準線 */
     content: '';
     display: inline-block;
-    width: 14px; height: 2px;
-    border-radius: 2px;
-    background: var(--accent);
+    width: 20px; height: 1px;
+    background: var(--muted-2);
   }
 
-  /* ── カード出現アニメーション ── */
+  /* ── カード出現：控えめに、跳ねさせない ── */
   @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
   .reveal {
-    animation: fadeInUp .5s cubic-bezier(.16,1,.3,1) both;
+    animation: fadeInUp .32s cubic-bezier(.2,.8,.2,1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { animation: none; }
   }
 
   table {
@@ -153,25 +149,24 @@
   tr:last-child td { border-bottom: none; }
   tr.header-row td {
     font-weight: 700;
-    background: #fafafd;
+    background: var(--card-2);
     color: var(--muted);
     font-variant-numeric: normal;
   }
 
   #signInBtnHolder { display: flex; justify-content: center; }
   #signInBtnHolder button {
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-    color: #fff;
+    background: var(--text);
+    color: var(--bg);
     border: none;
-    border-radius: 10px;
-    padding: 12px 26px;
+    border-radius: 8px;
+    padding: 12px 28px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow .15s, transform .15s;
+    transition: opacity .15s;
   }
-  #signInBtnHolder button:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  #signInBtnHolder button:hover { opacity: .85; }
 
   button.secondary {
     background: none;
@@ -205,6 +200,8 @@
   .field-row input, .field-row textarea {
     flex: 1;
     padding: 8px 10px;
+    background: var(--bg);
+    color: var(--text);
     border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 13px;
@@ -219,16 +216,16 @@
   .field-row textarea { resize: vertical; min-height: 44px; }
   #saveBtn {
     margin-top: 16px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-    color: #fff;
+    background: var(--text);
+    color: var(--bg);
     border: none;
     border-radius: 8px;
     padding: 9px 20px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: var(--shadow-sm);
   }
+  #saveBtn:hover:not(:disabled) { opacity: .85; }
   #saveBtn:disabled { opacity: 0.55; cursor: default; box-shadow: none; }
   #saveMsg { font-size: 13px; margin-top: 10px; font-weight: 600; }
   #saveMsg.ok { color: var(--good); }
@@ -273,55 +270,37 @@
   .chart-card rect:hover { opacity: .8; }
   .chart-gridline { stroke: var(--border); stroke-width: 1; }
 
-  /* ── ヒーロー ── */
+  /* ── ヒーロー：箱を持たず、背景に静かに溶け込ませる。主張するのは数字と余白だけ ── */
   .hero {
     position: relative;
-    overflow: hidden;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
-    color: #fff;
-    border-radius: 22px;
-    padding: 34px 36px;
-    margin-bottom: 28px;
-    box-shadow: 0 16px 40px -12px rgba(67,56,202,.45);
+    padding: 8px 0 56px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
+    gap: 32px;
     flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
   }
-  .hero::after {
-    /* 右上に淡い光沢を1つ置くだけで、単色グラデよりも質感が出る */
-    content: '';
-    position: absolute;
-    top: -60%; right: -10%;
-    width: 320px; height: 320px;
-    background: radial-gradient(circle, rgba(255,255,255,.16), transparent 65%);
-    pointer-events: none;
-  }
-  .hero-text { position: relative; }
   .hero-text h2 {
-    font-size: 24px;
-    margin: 0 0 14px;
-    font-weight: 800;
-    letter-spacing: -.02em;
-    line-height: 1.3;
+    font-family: var(--display-font);
+    font-size: 32px;
+    margin: 0 0 22px;
+    font-weight: 400;
+    letter-spacing: .01em;
+    line-height: 1.45;
+    color: var(--text);
   }
   .hero .period {
     font-size: 12px;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px 20px;
+    color: var(--muted);
   }
-  .hero .period span {
-    background: rgba(255,255,255,.14);
-    border: 1px solid rgba(255,255,255,.22);
-    border-radius: 999px;
-    padding: 5px 13px;
-    font-weight: 500;
-  }
-  .hero-ring { position: relative; flex: 0 0 auto; text-align: center; }
+  .hero-ring { flex: 0 0 auto; text-align: center; }
   .hero-ring svg { display: block; }
-  .hero-ring .ring-label { font-size: 11px; opacity: .85; margin-top: 6px; font-weight: 500; }
+  .hero-ring .ring-label { font-size: 11px; opacity: .68; margin-top: 8px; font-weight: 400; letter-spacing: .04em; }
 
   /* ── 目標ギャップのタイル ── */
   .tile-grid {
@@ -1229,7 +1208,7 @@ function escapeXml(s) {
 
 // header: ['ステージ','件数'] のような [カテゴリ列名, 系列名...]。rows: [カテゴリ, 値...][]
 // 系列色はdataviz skillのカテゴリカルパレット固定順（slot1 blue, slot2 orange）を使用。3系列以上は現状想定していない。
-const SERIES_COLORS = ['#2a78d6', '#eb6834'];
+const SERIES_COLORS = ['#3987e5', '#d95926']; // dataviz skillの暗背景用ステップ値
 function buildGroupedBarChart(header, dataRows) {
   const seriesNames = header.slice(1);
   const categories = dataRows.map(r => r[0]);
@@ -1247,7 +1226,7 @@ function buildGroupedBarChart(header, dataRows) {
     const y = plotHeight - (plotHeight - 20) * f;
     svg += `<line x1="0" y1="${y.toFixed(1)}" x2="${width}" y2="${y.toFixed(1)}" class="chart-gridline"/>`;
   });
-  svg += `<line x1="0" y1="${plotHeight}" x2="${width}" y2="${plotHeight}" stroke="#c3c2b7" stroke-width="1"/>`;
+  svg += `<line x1="0" y1="${plotHeight}" x2="${width}" y2="${plotHeight}" stroke="rgba(255,255,255,.28)" stroke-width="1"/>`;
 
   categories.forEach((cat, ci) => {
     const groupX = catGap + ci * (groupWidth + catGap);
