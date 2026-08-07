@@ -1,0 +1,10 @@
+# このリポジトリは Public（全世界に公開）。
+# 認証情報が万一このフォルダに紛れ込んでも push されないよう二重にブロックする。
+credentials.json
+client_secret*.json
+*token*.json
+.env
+.env.*
+*.pem
+*.key
+service-account*.json
