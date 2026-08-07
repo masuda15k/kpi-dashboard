@@ -83,6 +83,86 @@
     color: var(--muted);
     cursor: pointer;
   }
+  #inputForm {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  #inputForm h2 { font-size: 14px; margin: 0 0 12px; }
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .field-row:last-of-type { border-bottom: none; }
+  .field-row label { flex: 0 0 260px; font-size: 13px; color: var(--muted); }
+  .field-row input, .field-row textarea {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .field-row textarea { resize: vertical; min-height: 40px; }
+  #saveBtn {
+    margin-top: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 18px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #saveBtn:disabled { opacity: 0.6; cursor: default; }
+  #saveMsg { font-size: 13px; margin-top: 8px; }
+  #saveMsg.ok { color: #188038; }
+  #saveMsg.error { color: #d93025; }
+  .viewer-note {
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+  }
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px 10px;
+    margin-bottom: 12px;
+  }
+  .chart-legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .chart-legend .swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+  .chart-bar-label {
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .chart-value-label {
+    font-size: 11px;
+    fill: #0b0b0b;
+    font-weight: 600;
+  }
 </style>
 </head>
 <body>
@@ -102,6 +182,8 @@
   </div>
 
   <div id="statusMsg" style="display:none;"></div>
+  <div id="viewerNote" class="viewer-note" style="display:none;">あなたは閲覧のみです（入力はメンバー本人のみ行えます）</div>
+  <div id="inputForm" style="display:none;"></div>
   <div id="dashboardRoot" style="display:none;"></div>
 </main>
 
@@ -109,11 +191,38 @@
 // ── 設定 ──────────────────────────────────────────
 const CLIENT_ID = '315650091875-4b15pp0ue46gp6b8e2uitksc5ea5h6g6.apps.googleusercontent.com';
 const SPREADSHEET_ID = '1qHftqur_IDqjc97VnfMopSnMeQj6z5U-m5x68O1Ahkw';
-const SHEET_RANGE = 'ダッシュボード!A1:H60';
-const SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+const SHEET_RANGE = 'ダッシュボード'; // タブ名のみ＝実データがある範囲を自動取得（列I等の追加列があっても切れない）
+const SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email';
+
+// ログイン中のメールアドレス → 本人の手入力タブ名（メンバー4名のみ。それ以外は閲覧のみ）
+const MEMBER_MAP = {
+  'kazumasasugawara@shikigaku.com': '菅原',
+  'kayomaruno@shikigaku.com': '丸野',
+  'wataruebato@shikigaku.com': '江波戸',
+  'takahiroiiyama@shikigaku.com': '飯山',
+};
+
+// kpi-v3-core.js の MEMBER_MANUAL_CELLS と1対1で対応（B4:B17・この順序のまま）
+const MEMBER_MANUAL_CELLS = [
+  { key: 'nextDayCreate', label: '【日次】次の約束：商談作成数', type: 'number' },
+  { key: 'nextDayYotei',  label: '【日次】次の約束：商談予定数', type: 'number' },
+  { key: 'nextDayShadan', label: '【日次】次の約束：商談実施数', type: 'number' },
+  { key: 'nextDayP2',     label: '【日次】次の約束：コンサル部提案提供数', type: 'number' },
+  { key: 'nextDayP3',     label: '【日次】次の約束：提案済数', type: 'number' },
+  { key: 'nextDayClose',  label: '【日次】次の約束：新規獲得数', type: 'number' },
+  { key: 'weeklyReason',  label: '【週報】不足の理由', type: 'textarea' },
+  { key: 'weeklyAction',  label: '【週報】行動変化', type: 'textarea' },
+  { key: 'nextWeekCreate', label: '【週報】次週の約束：商談作成数', type: 'number' },
+  { key: 'nextWeekYotei',  label: '【週報】次週の約束：商談予定数', type: 'number' },
+  { key: 'nextWeekShadan', label: '【週報】次週の約束：商談実施数', type: 'number' },
+  { key: 'nextWeekP2',     label: '【週報】次週の約束：コンサル部提案提供数', type: 'number' },
+  { key: 'nextWeekP3',     label: '【週報】次週の約束：提案済', type: 'number' },
+  { key: 'nextWeekClose',  label: '【週報】次週の約束：新規獲得数', type: 'number' },
+];
 
 let tokenClient;
 let accessToken = null;
+let myTab = null; // ログインユーザーが本人入力可能なタブ名（該当なしならnull＝閲覧のみ）
 
 window.addEventListener('load', () => {
   tokenClient = google.accounts.oauth2.initTokenClient({
@@ -133,14 +242,32 @@ window.addEventListener('load', () => {
   document.getElementById('signInBtnHolder').appendChild(btn);
 });
 
-function onTokenReceived(resp) {
+async function onTokenReceived(resp) {
   if (resp.error) {
     showStatus('ログインに失敗しました：' + resp.error, true);
     return;
   }
   accessToken = resp.access_token;
   document.getElementById('loginGate').style.display = 'none';
-  loadDashboard();
+
+  try {
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const user = await userRes.json();
+    document.getElementById('userBox').style.display = 'flex';
+    document.getElementById('userName').textContent = user.email || 'ログイン中';
+    myTab = MEMBER_MAP[user.email] || null;
+  } catch (e) {
+    showStatus('ユーザー情報の取得に失敗しました：' + e.message, true);
+  }
+
+  if (myTab) {
+    await loadInputForm();
+  } else {
+    document.getElementById('viewerNote').style.display = 'block';
+  }
+  await loadDashboard();
 }
 
 document.getElementById('signOutBtn').addEventListener('click', () => {
@@ -163,10 +290,98 @@ async function loadDashboard() {
     const data = await res.json();
     renderDashboard(data.values || []);
     hideStatus();
-    document.getElementById('userBox').style.display = 'flex';
-    document.getElementById('userName').textContent = '識学アカウントでログイン中';
   } catch (e) {
     showStatus('データの読み込みに失敗しました：' + e.message, true);
+  }
+}
+
+// ── 本人入力フォーム（REQ-03）─────────────────────
+async function loadInputForm() {
+  const range = `'${myTab}'!B4:B17`;
+  let currentValues = [];
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body?.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    currentValues = (data.values || []).map(r => (r && r[0] !== undefined) ? r[0] : '');
+  } catch (e) {
+    showStatus('入力フォームの読み込みに失敗しました：' + e.message, true);
+    return;
+  }
+
+  const form = document.getElementById('inputForm');
+  form.innerHTML = '';
+  const h = document.createElement('h2');
+  h.textContent = `${myTab}さんの入力フォーム`;
+  form.appendChild(h);
+
+  const inputs = [];
+  MEMBER_MANUAL_CELLS.forEach((def, i) => {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    const label = document.createElement('label');
+    label.textContent = def.label;
+    row.appendChild(label);
+
+    const input = def.type === 'textarea' ? document.createElement('textarea') : document.createElement('input');
+    if (def.type === 'number') input.type = 'text'; // 全角数字入力もそのまま許容するためtext扱い
+    input.value = currentValues[i] || '';
+    input.dataset.key = def.key;
+    row.appendChild(input);
+    inputs.push(input);
+
+    form.appendChild(row);
+  });
+
+  const saveBtn = document.createElement('button');
+  saveBtn.id = 'saveBtn';
+  saveBtn.textContent = '保存';
+  saveBtn.onclick = () => saveInputForm(inputs, saveBtn);
+  form.appendChild(saveBtn);
+
+  const msg = document.createElement('div');
+  msg.id = 'saveMsg';
+  form.appendChild(msg);
+
+  form.style.display = 'block';
+}
+
+async function saveInputForm(inputs, saveBtn) {
+  const msg = document.getElementById('saveMsg');
+  msg.textContent = '';
+  msg.className = '';
+  saveBtn.disabled = true;
+  saveBtn.textContent = '保存中...';
+
+  const values = inputs.map(inp => [inp.value]); // 失敗時もinputの値はそのまま残るので入力内容は失われない（REQ-05）
+
+  try {
+    const range = `'${myTab}'!B4:B17`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ range, majorDimension: 'ROWS', values }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body?.error?.message || `HTTP ${res.status}`);
+    }
+    msg.textContent = '保存しました';
+    msg.className = 'ok';
+  } catch (e) {
+    msg.textContent = '保存に失敗しました（入力内容は消えていません）：' + e.message;
+    msg.className = 'error';
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = '保存';
   }
 }
 
@@ -211,6 +426,13 @@ function renderDashboard(rows) {
       currentTable = null; // 空行＝セクション区切り
       continue;
     }
+    if (row[0] && row[0].startsWith('■ グラフ用データ')) {
+      // このセクションはSheets側では埋め込みグラフの元データ（値のみでは画像を再現できない）。
+      // 同じ数値からこちら側で実際の棒グラフを描画し、末尾の「■ グラフ（自動生成...）」行はスキップする。
+      i = renderChartDataSection(root, rows, i + 1);
+      currentTable = null;
+      continue;
+    }
     if (row[0] && row[0].startsWith('■')) {
       const title = document.createElement('div');
       title.className = 'section-title';
@@ -233,6 +455,94 @@ function renderDashboard(rows) {
     });
     currentTable.appendChild(tr);
   }
+}
+
+// 「■ グラフ用データ」以降を、空行区切りのグループごとに棒グラフとして描画する。
+// 「■ グラフ（自動生成...）」という最終行に当たったら終了。戻り値＝処理済みの最終行index。
+function renderChartDataSection(root, rows, startIdx) {
+  const title = document.createElement('div');
+  title.className = 'section-title';
+  title.textContent = '■⑥ グラフ';
+  root.appendChild(title);
+
+  let i = startIdx;
+  let group = [];
+  const flushGroup = () => {
+    if (group.length >= 2) { // 見出し行＋データ行が最低1行
+      root.appendChild(buildGroupedBarChart(group[0], group.slice(1)));
+    }
+    group = [];
+  };
+
+  for (; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length === 0 || (row.length === 1 && row[0] === '')) {
+      flushGroup();
+      continue;
+    }
+    if (row[0] && row[0].startsWith('■ グラフ（')) {
+      flushGroup();
+      return i; // 埋め込みグラフの案内行自体は不要なので描画せずスキップ
+    }
+    if (row[0] && row[0].startsWith('■')) {
+      flushGroup();
+      return i - 1; // 想定外の次セクションに当たった場合は1つ戻して呼び出し元に処理を戻す
+    }
+    group.push(row);
+  }
+  flushGroup();
+  return i;
+}
+
+function escapeXml(s) {
+  return String(s).replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
+}
+
+// header: ['ステージ','件数'] のような [カテゴリ列名, 系列名...]。rows: [カテゴリ, 値...][]
+// 系列色はdataviz skillのカテゴリカルパレット固定順（slot1 blue, slot2 orange）を使用。3系列以上は現状想定していない。
+const SERIES_COLORS = ['#2a78d6', '#eb6834'];
+function buildGroupedBarChart(header, dataRows) {
+  const seriesNames = header.slice(1);
+  const categories = dataRows.map(r => r[0]);
+  const seriesData = seriesNames.map((_, si) => dataRows.map(r => Number(r[si + 1]) || 0));
+  const maxVal = Math.max(1, ...seriesData.flat());
+
+  const width = 640, plotHeight = 140, catGap = 14;
+  const groupWidth = (width - catGap * (categories.length + 1)) / categories.length;
+  const barGap = seriesNames.length > 1 ? 3 : 0;
+  const barWidth = Math.min(32, (groupWidth - barGap * (seriesNames.length - 1)) / seriesNames.length);
+
+  let svg = `<svg viewBox="0 0 ${width} ${plotHeight + 24}" width="100%" style="max-width:${width}px;display:block;">`;
+  svg += `<line x1="0" y1="${plotHeight}" x2="${width}" y2="${plotHeight}" stroke="#c3c2b7" stroke-width="1"/>`;
+
+  categories.forEach((cat, ci) => {
+    const groupX = catGap + ci * (groupWidth + catGap);
+    seriesNames.forEach((name, si) => {
+      const val = seriesData[si][ci];
+      const h = maxVal ? (val / maxVal) * (plotHeight - 20) : 0;
+      const x = groupX + si * (barWidth + barGap);
+      const y = plotHeight - h;
+      svg += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${SERIES_COLORS[si]}"><title>${escapeXml(name)} ${escapeXml(cat)}: ${val}</title></rect>`;
+      svg += `<text class="chart-value-label" x="${(x + barWidth / 2).toFixed(1)}" y="${Math.max(10, y - 4).toFixed(1)}" text-anchor="middle">${val}</text>`;
+    });
+    svg += `<text class="chart-bar-label" x="${(groupX + groupWidth / 2).toFixed(1)}" y="${plotHeight + 16}" text-anchor="middle">${escapeXml(cat)}</text>`;
+  });
+  svg += `</svg>`;
+
+  const card = document.createElement('div');
+  card.className = 'chart-card';
+  if (seriesNames.length > 1) {
+    const legend = document.createElement('div');
+    legend.className = 'chart-legend';
+    legend.innerHTML = seriesNames.map((name, i) =>
+      `<span><span class="swatch" style="background:${SERIES_COLORS[i]}"></span>${escapeXml(name)}</span>`
+    ).join('');
+    card.appendChild(legend);
+  }
+  const wrap = document.createElement('div');
+  wrap.innerHTML = svg;
+  card.appendChild(wrap.firstChild);
+  return card;
 }
 </script>
 
