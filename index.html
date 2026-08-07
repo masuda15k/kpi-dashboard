@@ -225,6 +225,15 @@ let accessToken = null;
 let myTab = null; // ログインユーザーが本人入力可能なタブ名（該当なしならnull＝閲覧のみ）
 
 window.addEventListener('load', () => {
+  // file:// で直接開くとOAuthの許可オリジンに一致せず必ず認証エラーになるため、先に案内する
+  if (location.protocol === 'file:') {
+    document.getElementById('loginGate').innerHTML =
+      '<p>このファイルを直接開いてもログインできません。<br>' +
+      '下のリンクから公開ページを開いてください。</p>' +
+      '<p><a href="https://masuda15k.github.io/kpi-dashboard/">https://masuda15k.github.io/kpi-dashboard/</a></p>';
+    return;
+  }
+
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPE,
