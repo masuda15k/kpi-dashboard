@@ -367,6 +367,49 @@
     margin: 12px 0 10px;
   }
   .bar-fill { height: 100%; border-radius: 999px; transition: width .3s; }
+
+  /* ── 位置：実績とMUSTを「線の上の点」で示す。塗り面ではなく点の位置そのものが情報 ── */
+  .pos-track {
+    position: relative;
+    height: 2px;
+    background: var(--muted-2);
+    opacity: .4;
+    margin: 22px 4px 16px;
+  }
+  .pos-dot {
+    position: absolute;
+    top: 50%;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 3px var(--bg);
+  }
+  .pos-tick {
+    position: absolute;
+    top: 50%;
+    width: 1px; height: 12px;
+    background: var(--muted);
+    transform: translate(-50%, -50%);
+  }
+  .pos-tick::after {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: var(--muted-2);
+    white-space: nowrap;
+  }
+  .pos-dot::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+  }
   .tile-meta {
     font-size: 12px;
     color: var(--muted);
@@ -425,6 +468,35 @@
   .funnel-arrow .arrow-ico { display: block; color: var(--muted-2); font-size: 12px; }
 
   /* ── メンバーカード ── */
+  /* ── 同格を水平線で揃える：識学の組織図の作法をそのまま借りる。全員が同じ基準線の上に立つ ── */
+  .rank-strip {
+    position: relative;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 2px;
+    background: var(--muted-2);
+    opacity: .4;
+    margin: 8px 24px 40px;
+  }
+  .rank-node {
+    position: relative;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff;
+    box-shadow: 0 0 0 4px var(--bg);
+  }
+  .rank-node::after {
+    content: attr(data-label);
+    position: absolute;
+    top: 46px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    white-space: nowrap;
+  }
   .member-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -924,7 +996,28 @@ function makeBar(ratio, color) {
   return track;
 }
 
-// ■① ゴールとのギャップ → 指標ごとの大きな数字＋達成率バー
+// 「位置」：実績とMUSTを同じ線の上の点で示す。塗り面（量）ではなく点の位置（差）が主題。
+// ratio=0〜100で実績の位置を置き、mustRatio（通常100）にMUSTの目印を置く。behindなら実績側を危険色に。
+function buildPositionTrack(ratio, resultLabel, mustLabel, color, behind) {
+  const track = document.createElement('div');
+  track.className = 'pos-track';
+  if (mustLabel !== null) {
+    const tick = document.createElement('div');
+    tick.className = 'pos-tick';
+    tick.style.left = '100%';
+    tick.dataset.label = mustLabel;
+    track.appendChild(tick);
+  }
+  const dot = document.createElement('div');
+  dot.className = 'pos-dot';
+  dot.style.left = Math.max(0, Math.min(100, ratio)) + '%';
+  dot.style.background = color;
+  dot.dataset.label = resultLabel;
+  track.appendChild(dot);
+  return track;
+}
+
+// ■① ゴールとのギャップ → 指標ごとの大きな数字＋「位置」表示
 function renderGoalTiles(root, sec) {
   addTitle(root, sec.title);
   const rows = dataRowsOf(sec);
@@ -963,7 +1056,10 @@ function renderGoalTiles(root, sec) {
     }
 
     tile.append(head, val);
-    if (rate !== null) tile.appendChild(makeBar(rate, toneColor(tone)));
+    if (rate !== null) {
+      const behind = iDiff >= 0 && String(r[iDiff]).trim().startsWith('-');
+      tile.appendChild(buildPositionTrack(rate, r[iResult], iMust >= 0 ? r[iMust] : null, toneColor(tone), behind));
+    }
 
     const meta = document.createElement('div');
     meta.className = 'tile-meta';
@@ -1049,6 +1145,21 @@ function renderMemberCards(root, sec) {
   const members = header.slice(1);
   const byLabel = {};
   rows.slice(1).forEach(r => { byLabel[r[0]] = r.slice(1); });
+
+  // 同格を水平線で揃える：全員を1本の基準線の上に並べる（識学の組織図の作法）
+  const strip = document.createElement('div');
+  strip.className = 'rank-strip';
+  members.forEach((m, mi) => {
+    const paceText = (byLabel['ペース'] || [])[mi] || '';
+    const tone = toneOf(paceText) || 'good';
+    const node = document.createElement('span');
+    node.className = 'rank-node';
+    node.textContent = m.charAt(0);
+    node.style.background = toneColor(tone);
+    node.dataset.label = m;
+    strip.appendChild(node);
+  });
+  root.appendChild(strip);
 
   const grid = document.createElement('div');
   grid.className = 'member-grid';
