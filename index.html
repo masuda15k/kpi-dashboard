@@ -26,7 +26,15 @@
     --track: rgba(255,255,255,.08);
     --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
     --shadow-md: 0 16px 32px -12px rgba(0,0,0,.55);
-    --radius: 10px;
+    /* authkit.comのログインカードを分解して移植：際立たせるのは塗りではなく、
+       内側の細いハイライト＋淡いグロー＋外側の影を重ねた「縁の質感」 */
+    --shadow-glass: 0 1px 1px 0 rgba(238,240,244,.12) inset,
+                    0 24px 48px 0 rgba(170,180,232,.05) inset,
+                    0 16px 32px 0 rgba(0,0,0,.35);
+    --shadow-glass-hover: 0 1px 1px 0 rgba(238,240,244,.16) inset,
+                          0 24px 48px 0 rgba(170,180,232,.08) inset,
+                          0 24px 48px -8px rgba(0,0,0,.5);
+    --radius: 16px;
     --display-font: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
   }
   * { box-sizing: border-box; }
@@ -42,6 +50,31 @@
     min-height: 100vh;
   }
   ::selection { background: var(--accent-tint); }
+
+  /* ── 背景：識学カラー（薄紫・緑・金）だけを使った、はっきり動く光の膨らみ ── */
+  .bg-glow {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .bg-glow span {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: .18;
+    will-change: transform;
+  }
+  .bg-glow .g1 { width: 480px; height: 480px; background: var(--accent); top: -160px; left: -120px; animation: bgDrift1 16s ease-in-out infinite; }
+  .bg-glow .g2 { width: 420px; height: 420px; background: var(--good); top: 42%; right: -160px; animation: bgDrift2 20s ease-in-out infinite; }
+  .bg-glow .g3 { width: 360px; height: 360px; background: var(--warning); bottom: -140px; left: 18%; opacity: .12; animation: bgDrift3 24s ease-in-out infinite; }
+  @keyframes bgDrift1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(70px, 50px) scale(1.15); } }
+  @keyframes bgDrift2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-60px, 40px) scale(1.1); } }
+  @keyframes bgDrift3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(50px, -40px) scale(1.18); } }
+  @media (prefers-reduced-motion: reduce) {
+    .bg-glow span { animation: none; }
+  }
 
   header {
     position: sticky;
@@ -75,12 +108,13 @@
     font-size: 12px; font-weight: 700;
   }
   /* 間（ま）：余白を広く取る。左右の広い余白そのものが装飾になる */
-  main { max-width: 900px; margin: 72px auto 140px; padding: 0 28px; position: relative; }
+  main { max-width: 900px; margin: 72px auto 140px; padding: 0 28px; position: relative; z-index: 1; }
 
   #loginGate {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
+    box-shadow: var(--shadow-glass);
     padding: 96px 32px;
     text-align: center;
   }
@@ -183,7 +217,7 @@
     background: var(--card);
     border: 1px solid rgba(20,22,31,.055);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-glass);
     padding: 20px 22px;
     margin-bottom: 28px;
   }
@@ -245,7 +279,7 @@
     background: var(--card);
     border: 1px solid rgba(20,22,31,.055);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-glass);
     padding: 22px 24px 18px;
     margin-bottom: 12px;
   }
@@ -313,11 +347,11 @@
     background: var(--card);
     border: 1px solid rgba(20,22,31,.055);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-glass);
     padding: 24px 26px 26px;
     transition: box-shadow .25s cubic-bezier(.16,1,.3,1), transform .25s cubic-bezier(.16,1,.3,1);
   }
-  .tile:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+  .tile:hover { box-shadow: var(--shadow-glass-hover); transform: translateY(-3px); }
   .tile-head {
     display: flex;
     justify-content: space-between;
@@ -367,7 +401,7 @@
     overflow: hidden;
     margin: 12px 0 10px;
   }
-  .bar-fill { height: 100%; border-radius: 999px; transition: width .3s; }
+  .bar-fill { height: 100%; border-radius: 999px; transition: width .9s cubic-bezier(.16,1,.3,1); }
 
   /* ── 位置：まず塗りバーで「どれだけ埋まっているか」を瞬時に見せ、
      その上に実績の点とMUSTの目印を重ねて「正確な位置」も示す（視認性優先） ── */
@@ -384,7 +418,7 @@
     inset: 0;
     right: auto;
     border-radius: 999px;
-    transition: width .3s;
+    transition: width .9s cubic-bezier(.16,1,.3,1);
   }
   .pos-dot {
     position: absolute;
@@ -393,6 +427,7 @@
     border-radius: 50%;
     transform: translate(-50%, -50%);
     box-shadow: 0 0 0 3px var(--bg);
+    transition: left .9s cubic-bezier(.16,1,.3,1);
   }
   .pos-tick {
     position: absolute;
@@ -444,7 +479,7 @@
     background: var(--card);
     border: 1px solid rgba(20,22,31,.055);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-glass);
     padding: 28px 30px 22px;
     margin-bottom: 8px;
   }
@@ -519,11 +554,11 @@
     background: var(--card);
     border: 1px solid rgba(20,22,31,.055);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-glass);
     padding: 22px 24px;
     transition: box-shadow .25s cubic-bezier(.16,1,.3,1), transform .25s cubic-bezier(.16,1,.3,1);
   }
-  .member-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+  .member-card:hover { box-shadow: var(--shadow-glass-hover); transform: translateY(-3px); }
   .member-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
   .member-avatar {
     width: 34px; height: 34px; border-radius: 50%;
@@ -577,7 +612,7 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-glass);
   }
   .action-ico {
     flex: 0 0 auto;
@@ -647,6 +682,12 @@
 </style>
 </head>
 <body>
+
+<div class="bg-glow" aria-hidden="true">
+  <span class="g1"></span>
+  <span class="g2"></span>
+  <span class="g3"></span>
+</div>
 
 <header>
   <div class="brand">
@@ -1049,14 +1090,35 @@ function buildProgressRing(percent, label) {
   return wrap;
 }
 
+// 見た目が動くべき箇所（数字・バー）をまとめて動かすヘルパー。reduced-motion環境では即時に確定値を反映する
+const prefersReducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function animateFillIn(el, prop, targetPercent) {
+  const clamped = Math.max(0, Math.min(100, targetPercent));
+  if (prefersReducedMotion()) { el.style[prop] = clamped + '%'; return; }
+  el.style[prop] = '0%';
+  requestAnimationFrame(() => requestAnimationFrame(() => { el.style[prop] = clamped + '%'; }));
+}
+function animateCountUp(el, target) {
+  if (prefersReducedMotion() || !isFinite(target)) { el.textContent = target; return; }
+  const duration = 900;
+  const start = performance.now();
+  (function tick(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(target * eased);
+    if (t < 1) requestAnimationFrame(tick);
+  })(start);
+}
+
 function makeBar(ratio, color) {
   const track = document.createElement('div');
   track.className = 'bar-track';
   const fill = document.createElement('div');
   fill.className = 'bar-fill';
-  fill.style.width = Math.max(0, Math.min(100, ratio)) + '%';
+  fill.style.width = '0%';
   fill.style.background = color;
   track.appendChild(fill);
+  animateFillIn(fill, 'width', ratio);
   return track;
 }
 
@@ -1067,7 +1129,7 @@ function buildPositionTrack(ratio, resultLabel, mustLabel, color, behind) {
   track.className = 'pos-track';
   const fill = document.createElement('div');
   fill.className = 'pos-fill';
-  fill.style.width = Math.max(0, Math.min(100, ratio)) + '%';
+  fill.style.width = '0%';
   fill.style.background = color;
   track.appendChild(fill);
   if (mustLabel !== null) {
@@ -1079,10 +1141,12 @@ function buildPositionTrack(ratio, resultLabel, mustLabel, color, behind) {
   }
   const dot = document.createElement('div');
   dot.className = 'pos-dot';
-  dot.style.left = Math.max(0, Math.min(100, ratio)) + '%';
+  dot.style.left = '0%';
   dot.style.background = color;
   dot.dataset.label = resultLabel;
   track.appendChild(dot);
+  animateFillIn(fill, 'width', ratio);
+  animateFillIn(dot, 'left', ratio);
   return track;
 }
 
@@ -1116,13 +1180,18 @@ function renderGoalTiles(root, sec) {
 
     const val = document.createElement('div');
     val.className = 'tile-value';
-    val.textContent = r[iResult] || '';
+    const resultText = String(r[iResult] || '');
+    const numSpan = document.createElement('span');
+    const isPureNumber = /^\d+$/.test(resultText.trim());
+    numSpan.textContent = isPureNumber ? '0' : resultText;
+    val.appendChild(numSpan);
     if (iMust >= 0 && r[iMust]) {
       const of = document.createElement('span');
       of.className = 'of';
       of.textContent = `/ ${r[iMust]}（MUST）`;
       val.appendChild(of);
     }
+    if (isPureNumber) animateCountUp(numSpan, Number(resultText.trim()));
 
     tile.append(head, val);
     if (rate !== null) {
@@ -1276,7 +1345,7 @@ function renderMemberCards(root, sec) {
       l.textContent = label;
       const v = document.createElement('span');
       v.innerHTML = `<b></b> / ${target}`;
-      v.querySelector('b').textContent = done;
+      animateCountUp(v.querySelector('b'), done);
       row.append(l, v);
       line.appendChild(row);
       line.appendChild(makeBar(ratio, toneColor(toneOf(paceText)) ));
