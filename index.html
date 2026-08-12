@@ -152,16 +152,18 @@
     background: var(--muted-2);
   }
 
-  /* ── カード出現：控えめに、跳ねさせない ── */
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+  /* ── カード出現：読み込み時に一括ではなく、スクロールして画面に入ってきた瞬間に浮き上がる ── */
+  .reveal-pending {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity .5s cubic-bezier(.16,1,.3,1), transform .5s cubic-bezier(.16,1,.3,1);
   }
-  .reveal {
-    animation: fadeInUp .32s cubic-bezier(.2,.8,.2,1) both;
+  .reveal-pending.is-visible {
+    opacity: 1;
+    transform: translateY(0);
   }
   @media (prefers-reduced-motion: reduce) {
-    .reveal { animation: none; }
+    .reveal-pending { transition: none; opacity: 1; transform: none; }
   }
 
   table {
@@ -1016,12 +1018,21 @@ function renderDashboard(rows) {
   reveal(membersRoot);
 }
 
-// カード群を少しずつ遅らせてフェードインさせる（一枚岩の表示より視覚的な質感が出る）
+// カード群は読み込み時に一括で動かすのではなく、スクロールして実際に画面へ入ってきた瞬間に浮き上がらせる
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    entry.target.classList.add('is-visible');
+    revealObserver.unobserve(entry.target);
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
 function reveal(root) {
   const els = root.querySelectorAll('.hero, .tile, .funnel-card, .member-card, .action-item, .notice, .chart-card');
   els.forEach((el, i) => {
-    el.style.animationDelay = Math.min(i * 30, 360) + 'ms';
-    el.classList.add('reveal');
+    el.classList.add('reveal-pending');
+    el.style.transitionDelay = Math.min((i % 8) * 50, 300) + 'ms';
+    revealObserver.observe(el);
   });
 }
 
