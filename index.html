@@ -759,9 +759,15 @@ const MEMBER_MANUAL_CELLS = [
   { key: 'nextWeekClose',  label: '【週報】次週の約束：新規獲得数', type: 'number' },
 ];
 
+const AUTO_SIGNIN_KEY = 'kpiDashboardAutoSignIn'; // 「前回サインイン済み」だけを覚える（トークン自体は保存しない）
+const REFRESH_MARGIN_SEC = 300; // トークン期限の5分前に、画面を止めずに裏側だけで更新する
+
 let tokenClient;
 let accessToken = null;
 let myTab = null; // ログインユーザーが本人入力可能なタブ名（該当なしならnull＝閲覧のみ）
+let hasCompletedSignIn = false; // 初回サインインが完了した後は、以降のトークン更新で画面を再描画しない
+let isAutoSignInAttempt = false; // 再訪問時の自動サインイン試行中フラグ（失敗してもエラー表示しない）
+let refreshTimer = null;
 
 window.addEventListener('load', () => {
   // file:// で直接開くとOAuthの許可オリジンに一致せず必ず認証エラーになるため、先に案内する
@@ -776,9 +782,19 @@ window.addEventListener('load', () => {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPE,
-    callback: onTokenReceived,
+    callback: handleTokenResponse,
     error_callback: (err) => {
-      showStatus('ログインできませんでした：' + (err?.type || '不明なエラー'), true);
+      if (hasCompletedSignIn) {
+        // 裏側での自動更新に失敗＝Google側のセッションが切れている。ログイン画面に戻す
+        resetToSignedOut();
+        showStatus('セッションの有効期限が切れました。再度ログインしてください。', true);
+      } else if (isAutoSignInAttempt) {
+        // 再訪問時の自動サインインが失敗しただけなので、静かにボタン操作に戻す
+        isAutoSignInAttempt = false;
+        hideStatus();
+      } else {
+        showStatus('ログインできませんでした：' + (err?.type || '不明なエラー'), true);
+      }
     },
   });
 
@@ -787,14 +803,52 @@ window.addEventListener('load', () => {
   btn.textContent = 'Googleでログイン';
   btn.onclick = () => tokenClient.requestAccessToken({ prompt: 'consent' });
   document.getElementById('signInBtnHolder').appendChild(btn);
+
+  // 前回サインイン済みのブラウザなら、ボタン操作なしで静かに再認証を試みる（Google側のセッションが生きていれば即ログイン）
+  if (localStorage.getItem(AUTO_SIGNIN_KEY) === '1') {
+    isAutoSignInAttempt = true;
+    showStatus('自動ログイン中...', false);
+    tokenClient.requestAccessToken({ prompt: '' });
+  }
 });
 
-async function onTokenReceived(resp) {
+function handleTokenResponse(resp) {
+  isAutoSignInAttempt = false;
   if (resp.error) {
     showStatus('ログインに失敗しました：' + resp.error, true);
     return;
   }
   accessToken = resp.access_token;
+  localStorage.setItem(AUTO_SIGNIN_KEY, '1');
+  scheduleTokenRefresh(resp.expires_in);
+  if (!hasCompletedSignIn) {
+    hasCompletedSignIn = true;
+    completeSignIn();
+  } else {
+    hideStatus(); // 裏側での更新完了。画面はそのまま
+  }
+}
+
+// 期限が切れる前にユーザー操作なしでトークンを更新し続ける（REQ: トークン自動リフレッシュ）
+function scheduleTokenRefresh(expiresInSec) {
+  clearTimeout(refreshTimer);
+  const delayMs = Math.max(10, (Number(expiresInSec) || 3600) - REFRESH_MARGIN_SEC) * 1000;
+  refreshTimer = setTimeout(() => {
+    tokenClient.requestAccessToken({ prompt: '' });
+  }, delayMs);
+}
+
+function resetToSignedOut() {
+  accessToken = null;
+  hasCompletedSignIn = false;
+  clearTimeout(refreshTimer);
+  localStorage.removeItem(AUTO_SIGNIN_KEY);
+  document.getElementById('loginGate').style.display = 'block';
+  document.getElementById('tabNav').style.display = 'none';
+  document.getElementById('userBox').style.display = 'none';
+}
+
+async function completeSignIn() {
   document.getElementById('loginGate').style.display = 'none';
 
   try {
@@ -833,7 +887,7 @@ document.getElementById('signOutBtn').addEventListener('click', () => {
   if (accessToken) {
     google.accounts.oauth2.revoke(accessToken, () => {});
   }
-  accessToken = null;
+  localStorage.removeItem(AUTO_SIGNIN_KEY); // 明示的ログアウト時は次回の自動サインインを行わない
   location.reload();
 });
 
@@ -1466,8 +1520,9 @@ function escapeXml(s) {
 }
 
 // header: ['ステージ','件数'] のような [カテゴリ列名, 系列名...]。rows: [カテゴリ, 値...][]
-// 系列色はdataviz skillのカテゴリカルパレット固定順（slot1 blue, slot2 orange）を使用。3系列以上は現状想定していない。
-const SERIES_COLORS = ['#3987e5', '#d95926']; // dataviz skillの暗背景用ステップ値
+// 系列色はdataviz skillのカテゴリカルパレット固定順（暗背景用、slot1〜8）を使用。9系列目以降は想定外としてグレーにフォールバックする
+const SERIES_COLORS = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767'];
+function seriesColor(i) { return SERIES_COLORS[i] || '#8a8e9c'; }
 function buildGroupedBarChart(header, dataRows) {
   const seriesNames = header.slice(1);
   const categories = dataRows.map(r => r[0]);
@@ -1494,7 +1549,7 @@ function buildGroupedBarChart(header, dataRows) {
       const h = maxVal ? (val / maxVal) * (plotHeight - 20) : 0;
       const x = groupX + si * (barWidth + barGap);
       const y = plotHeight - h;
-      svg += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${SERIES_COLORS[si]}"><title>${escapeXml(name)} ${escapeXml(cat)}: ${val}</title></rect>`;
+      svg += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${seriesColor(si)}"><title>${escapeXml(name)} ${escapeXml(cat)}: ${val}</title></rect>`;
       svg += `<text class="chart-value-label" x="${(x + barWidth / 2).toFixed(1)}" y="${Math.max(10, y - 4).toFixed(1)}" text-anchor="middle">${val}</text>`;
     });
     svg += `<text class="chart-bar-label" x="${(groupX + groupWidth / 2).toFixed(1)}" y="${plotHeight + 16}" text-anchor="middle">${escapeXml(cat)}</text>`;
@@ -1507,7 +1562,7 @@ function buildGroupedBarChart(header, dataRows) {
     const legend = document.createElement('div');
     legend.className = 'chart-legend';
     legend.innerHTML = seriesNames.map((name, i) =>
-      `<span><span class="swatch" style="background:${SERIES_COLORS[i]}"></span>${escapeXml(name)}</span>`
+      `<span><span class="swatch" style="background:${seriesColor(i)}"></span>${escapeXml(name)}</span>`
     ).join('');
     card.appendChild(legend);
   }
