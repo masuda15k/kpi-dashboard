@@ -214,7 +214,8 @@
   }
   button.secondary:hover { background: var(--bg); }
 
-  #inputForm {
+  /* 報告タブごとに入力カードが出るのでIDではなくクラスで指定する */
+  .input-card {
     background: var(--card);
     border: 1px solid rgba(20,22,31,.055);
     border-radius: var(--radius);
@@ -222,7 +223,7 @@
     padding: 20px 22px;
     margin-bottom: 28px;
   }
-  #inputForm h2 { font-size: 15px; margin: 0 0 14px; font-weight: 700; }
+  .input-card h2 { font-size: 15px; margin: 0 0 14px; font-weight: 700; }
   .field-row {
     display: flex;
     align-items: center;
@@ -249,7 +250,7 @@
     box-shadow: 0 0 0 3px var(--accent-tint);
   }
   .field-row textarea { resize: vertical; min-height: 44px; }
-  #saveBtn {
+  .save-btn {
     margin-top: 16px;
     background: var(--text);
     color: var(--bg);
@@ -258,13 +259,14 @@
     padding: 9px 20px;
     font-size: 13px;
     font-weight: 600;
+    font-family: inherit;
     cursor: pointer;
   }
-  #saveBtn:hover:not(:disabled) { opacity: .85; }
-  #saveBtn:disabled { opacity: 0.55; cursor: default; box-shadow: none; }
-  #saveMsg { font-size: 13px; margin-top: 10px; font-weight: 600; }
-  #saveMsg.ok { color: var(--good); }
-  #saveMsg.error { color: var(--critical); }
+  .save-btn:hover:not(:disabled) { opacity: .85; }
+  .save-btn:disabled { opacity: 0.55; cursor: default; box-shadow: none; }
+  .save-msg { font-size: 13px; margin-top: 10px; font-weight: 600; }
+  .save-msg.ok { color: var(--good); }
+  .save-msg.error { color: var(--critical); }
 
   .viewer-note {
     font-size: 13px;
@@ -680,6 +682,169 @@
   .tab-btn.active { color: var(--text); background: rgba(255,255,255,.08); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
+
+  /* ── 3階層を見間違えないよう、階層ごとに見た目そのものを変える ──
+     L1「表示対象」＝塗りピル／L2＝下線タブ／L3＝小さめセグメント */
+  .member-bar {
+    position: sticky;
+    top: 57px;
+    z-index: 9;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 28px;
+    background: rgba(10,13,22,.78);
+    backdrop-filter: blur(14px) saturate(1.4);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    border-bottom: 1px solid var(--border);
+  }
+  .member-bar-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+    margin-right: 6px;
+  }
+  .member-btn {
+    background: rgba(255,255,255,.05);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 6px 15px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .member-btn:hover { color: var(--text); background: rgba(255,255,255,.09); }
+  .member-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0a0d16;
+  }
+  /* L2はL1の下にくるので、stickyの重なり順を1段ずらす */
+  .tabnav { top: 108px; z-index: 8; }
+
+  .seg {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    margin: 32px 0 4px;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+  }
+  .seg-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 5px 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color .15s, background .15s;
+  }
+  .seg-btn:hover { color: var(--text); }
+  .seg-btn.active { color: var(--text); background: rgba(255,255,255,.1); }
+  .sub-panel { display: none; }
+  .sub-panel.active { display: block; }
+
+  /* ── 生成済み報告文：等幅で崩さずに見せ、コピーを1クリックにする ── */
+  .report-block {
+    background: var(--card);
+    border: 1px solid rgba(20,22,31,.055);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-glass);
+    padding: 18px 20px;
+    margin-bottom: 12px;
+  }
+  .report-block pre {
+    margin: 0 0 12px;
+    padding: 14px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: "SFMono-Regular", Consolas, "Courier New", monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 460px;
+    overflow-y: auto;
+  }
+  .copy-btn {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .copy-btn:hover { opacity: .85; }
+  .copy-btn.done { background: var(--good); color: #06281a; }
+
+  /* ── 1行だけの指標群（先行在庫・架電スタッツ等） ── */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .stat-item {
+    background: var(--card);
+    border: 1px solid rgba(20,22,31,.055);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-glass);
+    padding: 16px 18px;
+  }
+  .stat-item .k { font-size: 11px; color: var(--muted); margin-bottom: 7px; line-height: 1.4; }
+  .stat-item .v {
+    font-size: 24px; font-weight: 800; line-height: 1;
+    font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+  }
+
+  /* 商談分析の採点ランク */
+  .rank-badge {
+    display: inline-block;
+    min-width: 22px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+  }
+  .rank-badge.rank-a { background: var(--good); color: #06281a; }
+  .rank-badge.rank-b { background: var(--accent); color: #0a0d16; }
+  .rank-badge.rank-c { background: var(--warning); color: #2c2308; }
+  .rank-badge.rank-d { background: var(--critical); color: #2a0b0b; }
+
+  /* スプシ側で日付に化けた値の印（アプリ側では復元できないため印だけ付ける） */
+  .suspect {
+    color: var(--warning);
+    border-bottom: 1px dotted var(--warning);
+    cursor: help;
+  }
+
+  .empty-note {
+    color: var(--muted-2);
+    font-size: 13px;
+    padding: 28px 4px;
+    line-height: 1.8;
+  }
+
+  @media (max-width: 480px) {
+    .member-bar { padding: 8px 10px; }
+    .tabnav { top: 96px; padding: 8px 10px; }
+  }
 </style>
 </head>
 <body>
@@ -712,17 +877,39 @@
 
   <div id="statusMsg" style="display:none;"></div>
 
-  <nav class="tabnav" id="tabNav" style="display:none;">
-    <button class="tab-btn active" data-tab="overview">概要</button>
-    <button class="tab-btn" data-tab="members">メンバー</button>
-    <button class="tab-btn" id="tabBtnInput" data-tab="input" style="display:none;">入力</button>
+  <!-- L1：誰の分を見るか -->
+  <nav class="member-bar" id="memberBar" style="display:none;">
+    <span class="member-bar-label">表示対象</span>
+    <button class="member-btn active" data-member="">1係全体</button>
+    <button class="member-btn" data-member="菅原">菅原</button>
+    <button class="member-btn" data-member="丸野">丸野</button>
+    <button class="member-btn" data-member="江波戸">江波戸</button>
+    <button class="member-btn" data-member="飯山">飯山</button>
   </nav>
 
-  <div id="panel-overview" class="tab-panel active"></div>
-  <div id="panel-members" class="tab-panel"></div>
-  <div id="panel-input" class="tab-panel">
-    <div id="viewerNote" class="viewer-note" style="display:none;">あなたは閲覧のみです（入力はメンバー本人のみ行えます）</div>
-    <div id="inputForm" style="display:none;"></div>
+  <!-- L2：何を見るか -->
+  <nav class="tabnav" id="tabNav" style="display:none;">
+    <button class="tab-btn active" data-tab="dashboard">ダッシュボード</button>
+    <button class="tab-btn" data-tab="daily">日報</button>
+    <button class="tab-btn" data-tab="weekly">週報</button>
+    <button class="tab-btn" data-tab="monthly" id="tabBtnMonthly">月報</button>
+    <button class="tab-btn" data-tab="analysis">分析</button>
+  </nav>
+
+  <div id="panel-dashboard" class="tab-panel active"></div>
+  <div id="panel-daily" class="tab-panel"></div>
+  <div id="panel-weekly" class="tab-panel"></div>
+  <div id="panel-monthly" class="tab-panel"></div>
+  <div id="panel-analysis" class="tab-panel">
+    <!-- L3：分析タブの中だけの切替 -->
+    <div class="seg" id="analysisSeg">
+      <button class="seg-btn active" data-sub="general" id="segBtnGeneral">全般</button>
+      <button class="seg-btn" data-sub="katsudo">架電分析</button>
+      <button class="seg-btn" data-sub="shodan">商談分析</button>
+    </div>
+    <div id="sub-general" class="sub-panel active"></div>
+    <div id="sub-katsudo" class="sub-panel"></div>
+    <div id="sub-shodan" class="sub-panel"></div>
   </div>
 </main>
 
@@ -730,8 +917,13 @@
 // ── 設定 ──────────────────────────────────────────
 const CLIENT_ID = '315650091875-4b15pp0ue46gp6b8e2uitksc5ea5h6g6.apps.googleusercontent.com';
 const SPREADSHEET_ID = '1qHftqur_IDqjc97VnfMopSnMeQj6z5U-m5x68O1Ahkw';
-const SHEET_RANGE = 'ダッシュボード'; // タブ名のみ＝実データがある範囲を自動取得（列I等の追加列があっても切れない）
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email';
+
+// 参照するスプシのタブ名。範囲を付けずタブ名だけ指定＝実データのある範囲を自動取得（列が増えても切れない）
+const SHEET_DASHBOARD = 'ダッシュボード'; // 1係全体のダッシュボード
+const SHEET_REPORT    = '報告';           // 1係全体の日報・週報・月報（増田さんの入力先）
+const SHEET_ANALYSIS  = '分析';           // 1係全体の分析（架電・商談分析を含む）
+const MEMBERS = ['菅原', '丸野', '江波戸', '飯山']; // 個人タブを持つメンバー（表示順）
 
 // ログイン中のメールアドレス → 本人が書き込めるタブ（tab）と、画面表示用の呼び方（label）。
 // tabとlabelが異なるのは増田さんだけ（書き込み先は「報告」タブだが、本人は「報告さん」ではないため）
@@ -778,7 +970,24 @@ const REPORT_MANUAL_CELLS = [
 ];
 
 // タブ名からその手入力セル定義を引く（B4始まりなので、行の終端は 3+件数 で自動的に決まる）
-function manualCellsFor(tab) { return tab === '報告' ? REPORT_MANUAL_CELLS : MEMBER_MANUAL_CELLS; }
+function manualCellsFor(tab) { return tab === SHEET_REPORT ? REPORT_MANUAL_CELLS : MEMBER_MANUAL_CELLS; }
+
+// 入力欄をどの報告タブに出すかは、ラベルの【】接頭辞から決める（行番号をハードコードしない）
+function groupOfLabel(label) {
+  if (label.startsWith('【日次】')) return 'daily';
+  if (label.startsWith('【週報】')) return 'weekly';
+  if (label.startsWith('【月報】')) return 'monthly';
+  return 'other';
+}
+// 指定グループの入力欄と、そのスプシ上の連続範囲（B列）をまとめて返す
+function inputGroupFor(tab, group) {
+  const cells = manualCellsFor(tab);
+  const picked = [];
+  cells.forEach((def, i) => { if (groupOfLabel(def.label) === group) picked.push({ def, row: 4 + i }); });
+  if (!picked.length) return null;
+  const firstRow = picked[0].row, lastRow = picked[picked.length - 1].row;
+  return { picked, range: `'${tab}'!B${firstRow}:B${lastRow}` };
+}
 
 const AUTO_SIGNIN_KEY = 'kpiDashboardAutoSignIn'; // 「前回サインイン済み」だけを覚える（トークン自体は保存しない）
 const REFRESH_MARGIN_SEC = 300; // トークン期限の5分前に、画面を止めずに裏側だけで更新する
@@ -789,6 +998,17 @@ let myProfile = null; // ログインユーザーの{tab, label}（該当なし�
 let hasCompletedSignIn = false; // 初回サインインが完了した後は、以降のトークン更新で画面を再描画しない
 let isAutoSignInAttempt = false; // 再訪問時の自動サインイン試行中フラグ（失敗してもエラー表示しない）
 let refreshTimer = null;
+
+// ── 画面の状態（L1／L2／L3）──
+let selectedMember = null;     // null＝1係全体。それ以外はメンバー名（＝スプシのタブ名）
+let activeTab = 'dashboard';   // L2
+let activeSub = 'general';     // L3（分析タブ内）
+const sheetCache = {};         // タブ名 → 行配列。一度読んだタブは再取得しない
+
+// いま表示している対象のスプシタブ名。1係全体のときは入力先＝「報告」
+function currentSheet() { return selectedMember || SHEET_REPORT; }
+// いま表示している対象が自分の書き込み先かどうか（＝入力を許可してよいか。REQ-04）
+function canEditCurrent() { return !!myProfile && myProfile.tab === currentSheet(); }
 
 window.addEventListener('load', () => {
   // file:// で直接開くとOAuthの許可オリジンに一致せず必ず認証エラーになるため、先に案内する
@@ -865,6 +1085,7 @@ function resetToSignedOut() {
   clearTimeout(refreshTimer);
   localStorage.removeItem(AUTO_SIGNIN_KEY);
   document.getElementById('loginGate').style.display = 'block';
+  document.getElementById('memberBar').style.display = 'none';
   document.getElementById('tabNav').style.display = 'none';
   document.getElementById('userBox').style.display = 'none';
 }
@@ -885,24 +1106,62 @@ async function completeSignIn() {
     showStatus('ユーザー情報の取得に失敗しました：' + e.message, true);
   }
 
+  // ログイン直後は自分の担当分から見せる（メンバーなら自分、増田さん・その他は1係全体）
+  if (myProfile && myProfile.tab !== SHEET_REPORT) selectedMember = myProfile.tab;
+  syncMemberBar();
+
+  document.getElementById('memberBar').style.display = 'flex';
   document.getElementById('tabNav').style.display = 'flex';
-  if (myProfile) {
-    document.getElementById('tabBtnInput').style.display = 'inline-block';
-    await loadInputForm();
-  } else {
-    document.getElementById('viewerNote').style.display = 'block';
-  }
-  await loadDashboard();
+  await renderCurrentView();
 }
 
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+// ── L1：表示対象（1係全体／メンバー）──
+function syncMemberBar() {
+  document.querySelectorAll('.member-btn').forEach(b => {
+    b.classList.toggle('active', (b.dataset.member || null) === selectedMember);
+  });
+}
+document.querySelectorAll('.member-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const target = btn.dataset.member || null;
+    if (target === selectedMember) return;
+    selectedMember = target;
+    syncMemberBar();
+    await renderCurrentView();
   });
 });
+
+// ── L2：ダッシュボード／日報／週報／月報／分析 ──
+function activateTab(name) {
+  activeTab = name;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+}
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+});
+
+// ── L3：分析タブの中（全般／架電分析／商談分析）──
+function activateSub(name) {
+  activeSub = name;
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.sub === name));
+  document.querySelectorAll('.sub-panel').forEach(p => p.classList.toggle('active', p.id === 'sub-' + name));
+}
+document.querySelectorAll('.seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => activateSub(btn.dataset.sub));
+});
+
+// 対象によって出せないタブを隠す。隠したタブを開いていたら安全な場所へ寄せる
+function applyTabVisibility(isTeam) {
+  // 月報はメンバー個人タブに転記ブロックが無いため1係全体のときだけ
+  document.getElementById('tabBtnMonthly').style.display = isTeam ? 'inline-block' : 'none';
+  if (!isTeam && activeTab === 'monthly') activateTab('dashboard');
+
+  // 分析の「全般」（セグメント別転換率・失注理由・滞留・データ品質）は1係全体のみ
+  document.getElementById('segBtnGeneral').style.display = isTeam ? 'inline-block' : 'none';
+  if (!isTeam && activeSub === 'general') activateSub('katsudo');
+  if (isTeam && activeSub === 'general') activateSub('general');
+}
 
 document.getElementById('signOutBtn').addEventListener('click', () => {
   if (accessToken) {
@@ -912,94 +1171,220 @@ document.getElementById('signOutBtn').addEventListener('click', () => {
   location.reload();
 });
 
-async function loadDashboard() {
-  showStatus('読み込み中...', false);
-  try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_RANGE)}`;
+// ── データ取得 ──────────────────────────────────────
+// 必要なタブをまとめて1リクエストで取る（batchGet）。一度読んだタブはキャッシュから返す
+async function fetchSheets(tabs) {
+  const need = tabs.filter(t => !(t in sheetCache));
+  if (need.length) {
+    const qs = need.map(t => 'ranges=' + encodeURIComponent(t)).join('&');
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchGet?${qs}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body?.error?.message || `HTTP ${res.status}`);
     }
     const data = await res.json();
-    renderDashboard(data.values || []);
-    hideStatus();
+    (data.valueRanges || []).forEach((vr, i) => { sheetCache[need[i]] = vr.values || []; });
+    need.forEach(t => { if (!(t in sheetCache)) sheetCache[t] = []; });
+  }
+  const out = {};
+  tabs.forEach(t => { out[t] = sheetCache[t] || []; });
+  return out;
+}
+
+// 1行目＝タイトル、2行目＝期間、以降は ■/◆ 見出しごとのセクションに切り分ける。
+// 見出しの行番号はメンバーごとにズレるので、必ず見出し文字列で判定する。
+function parseSheet(rows) {
+  const isHead = s => /^[■◆]/.test(s);
+  let i = 0, title = '', period = '', elapsedPct = null;
+  if (rows[0] && rows[0][0] && !isHead(String(rows[0][0]))) { title = String(rows[0][0]); i = 1; }
+  if (rows[1] && rows[1][0] && !isHead(String(rows[1][0]))) {
+    period = String(rows[1][0]);
+    i = 2;
+    // 「Q(6/1〜8/31) 29/64営業日(45%)」のような表記から四半期の経過率を抜く
+    const m = period.match(/Q\([^)]*\)[^(]*\((\d+)%\)/);
+    if (m) elapsedPct = Number(m[1]);
+  }
+  const sections = [];
+  let cur = null;
+  for (; i < rows.length; i++) {
+    const row = rows[i];
+    const first = (row && row[0]) ? String(row[0]) : '';
+    if (isHead(first)) { cur = { title: first, rows: [] }; sections.push(cur); continue; }
+    if (!cur) continue;
+    cur.rows.push(row && row.length ? row : []);
+  }
+  return { title, period, elapsedPct, sections };
+}
+
+function findSection(parsed, pred) { return parsed.sections.find(s => pred(s.title)); }
+
+// 手入力セルの現在値。タブ全体を既に取得しているので、ここで追加のAPIは叩かない
+function inputValuesFrom(parsed) {
+  const sec = findSection(parsed, t => t.startsWith('■ 手入力セル'));
+  if (!sec) return [];
+  return sec.rows.map(r => (r && r[1] !== undefined) ? String(r[1]) : '');
+}
+
+// ── 画面全体の再描画 ────────────────────────────────
+const PANEL_IDS = ['dashboard', 'daily', 'weekly', 'monthly'];
+const SUB_IDS = ['general', 'katsudo', 'shodan'];
+
+async function renderCurrentView() {
+  const isTeam = !selectedMember;
+  const sheet = currentSheet();
+  const need = isTeam ? [SHEET_DASHBOARD, SHEET_REPORT, SHEET_ANALYSIS] : [sheet, SHEET_ANALYSIS];
+
+  showStatus('読み込み中...', false);
+  let sheets;
+  try {
+    sheets = await fetchSheets(need);
   } catch (e) {
     showStatus('データの読み込みに失敗しました：' + e.message, true);
-  }
-}
-
-// ── 本人入力フォーム（REQ-03・報告タブはREQ-06）─────────────────────
-function inputRangeFor(tab, cells) {
-  return `'${tab}'!B4:B${3 + cells.length}`;
-}
-
-async function loadInputForm() {
-  const cells = manualCellsFor(myProfile.tab);
-  const range = inputRangeFor(myProfile.tab, cells);
-  let currentValues = [];
-  try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body?.error?.message || `HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    currentValues = (data.values || []).map(r => (r && r[0] !== undefined) ? r[0] : '');
-  } catch (e) {
-    showStatus('入力フォームの読み込みに失敗しました：' + e.message, true);
     return;
   }
 
-  const form = document.getElementById('inputForm');
-  form.innerHTML = '';
+  PANEL_IDS.forEach(id => { document.getElementById('panel-' + id).innerHTML = ''; });
+  SUB_IDS.forEach(id => { document.getElementById('sub-' + id).innerHTML = ''; });
+
+  const own = parseSheet(sheets[sheet] || []);
+  const analysis = parseSheet(sheets[SHEET_ANALYSIS] || []);
+
+  // ダッシュボード：1係全体は「ダッシュボード」タブ、メンバーは本人タブの■1〜■5
+  const dashRoot = document.getElementById('panel-dashboard');
+  const dashSrc = isTeam ? parseSheet(sheets[SHEET_DASHBOARD] || []) : own;
+  renderHero(dashRoot, dashSrc);
+  dashSrc.sections.filter(s => isDashboardSection(s.title)).forEach(sec => renderSection(dashRoot, sec));
+
+  // 日報・週報・月報：入力欄＋スプシ側で生成済みの報告文
+  renderReportPanel('daily', sheet, own);
+  renderReportPanel('weekly', sheet, own);
+  renderReportPanel('monthly', sheet, own);
+
+  // 分析：全般（1係のみ）／架電分析／商談分析
+  renderAnalysisPanels(isTeam, own, analysis);
+
+  applyTabVisibility(isTeam);
+  PANEL_IDS.forEach(id => reveal(document.getElementById('panel-' + id)));
+  SUB_IDS.forEach(id => reveal(document.getElementById('sub-' + id)));
+  hideStatus();
+}
+
+function renderHero(root, parsed) {
+  if (!parsed.title) return;
+  const hero = document.createElement('div');
+  hero.className = 'hero';
+  const text = document.createElement('div');
+  text.className = 'hero-text';
   const h = document.createElement('h2');
-  h.textContent = `${myProfile.label}さんの入力フォーム`;
-  form.appendChild(h);
+  h.textContent = parsed.title;
+  text.appendChild(h);
+  if (parsed.period) {
+    const p = document.createElement('div');
+    p.className = 'period';
+    // 「／」区切りの期間表記を項目ごとに分けて折り返しやすくする
+    parsed.period.split('／').forEach(part => {
+      const span = document.createElement('span');
+      span.textContent = part.trim();
+      p.appendChild(span);
+    });
+    text.appendChild(p);
+  }
+  hero.appendChild(text);
+  if (parsed.elapsedPct !== null) hero.appendChild(buildProgressRing(parsed.elapsedPct, '四半期 経過'));
+  root.appendChild(hero);
+}
+
+// ダッシュボードタブに出すのは、手入力セル・報告文・行動分析(■6)以外の全セクション
+function isDashboardSection(title) {
+  if (title.startsWith('■ 手入力セル')) return false;
+  if (title.startsWith('◆')) return false;
+  if (/^■6\./.test(title)) return false; // メンバーの行動分析は分析タブへ回す
+  return true;
+}
+
+// ── 日報・週報・月報パネル ──────────────────────────
+const REPORT_LABEL = { daily: '日報', weekly: '週報', monthly: '月報' };
+
+function renderReportPanel(group, sheet, parsed) {
+  const root = document.getElementById('panel-' + group);
+  const grp = inputGroupFor(sheet, group);
+  const values = inputValuesFrom(parsed);
+  const editable = canEditCurrent();
+
+  if (grp) root.appendChild(buildInputCard(group, grp, values, editable));
+
+  // スプシ側で生成済みの報告文（◆見出しの直下セル）
+  const sec = findSection(parsed, t => t.startsWith('◆') && t.includes(REPORT_LABEL[group]));
+  if (sec) {
+    if (group === 'monthly') root.appendChild(buildMonthlyBlock(sec));
+    else root.appendChild(buildReportTextCard(sec, REPORT_LABEL[group]));
+  }
+
+  if (!grp && !sec) {
+    root.innerHTML = `<div class="empty-note">この対象には${REPORT_LABEL[group]}のデータがありません。</div>`;
+  }
+}
+
+function buildInputCard(group, grp, values, editable) {
+  const card = document.createElement('div');
+  card.className = 'input-card';
+
+  const h = document.createElement('h2');
+  h.textContent = `${REPORT_LABEL[group]}の入力`;
+  card.appendChild(h);
+
+  if (!editable) {
+    const note = document.createElement('div');
+    note.className = 'viewer-note';
+    note.textContent = selectedMember
+      ? `${selectedMember}さんの入力欄です（入力できるのは本人のみ）。閲覧のみ表示しています。`
+      : '1係全体の入力欄です（入力できるのは増田係長のみ）。閲覧のみ表示しています。';
+    card.appendChild(note);
+  }
 
   const inputs = [];
-  cells.forEach((def, i) => {
-    const row = document.createElement('div');
-    row.className = 'field-row';
+  grp.picked.forEach(({ def, row }) => {
+    const line = document.createElement('div');
+    line.className = 'field-row';
     const label = document.createElement('label');
     label.textContent = def.label;
-    row.appendChild(label);
+    line.appendChild(label);
 
     const input = def.type === 'textarea' ? document.createElement('textarea') : document.createElement('input');
     if (def.type === 'number') input.type = 'text'; // 全角数字入力もそのまま許容するためtext扱い
-    input.value = currentValues[i] || '';
+    input.value = values[row - 4] || '';
     input.dataset.key = def.key;
-    row.appendChild(input);
+    if (!editable) input.readOnly = true;
+    line.appendChild(input);
     inputs.push(input);
-
-    form.appendChild(row);
+    card.appendChild(line);
   });
 
-  const saveBtn = document.createElement('button');
-  saveBtn.id = 'saveBtn';
-  saveBtn.textContent = '保存';
-  saveBtn.onclick = () => saveInputForm(inputs, saveBtn);
-  form.appendChild(saveBtn);
-
   const msg = document.createElement('div');
-  msg.id = 'saveMsg';
-  form.appendChild(msg);
+  msg.className = 'save-msg';
 
-  form.style.display = 'block';
+  if (editable) {
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'save-btn';
+    saveBtn.textContent = '保存';
+    saveBtn.onclick = () => saveInputGroup(grp, inputs, saveBtn, msg);
+    card.appendChild(saveBtn);
+  }
+  card.appendChild(msg);
+  return card;
 }
 
-async function saveInputForm(inputs, saveBtn) {
-  const msg = document.getElementById('saveMsg');
+async function saveInputGroup(grp, inputs, saveBtn, msg) {
   msg.textContent = '';
-  msg.className = '';
+  msg.className = 'save-msg';
   saveBtn.disabled = true;
   saveBtn.textContent = '保存中...';
 
   const values = inputs.map(inp => [inp.value]); // 失敗時もinputの値はそのまま残るので入力内容は失われない（REQ-05）
 
   try {
-    const range = inputRangeFor(myProfile.tab, manualCellsFor(myProfile.tab));
+    const range = grp.range;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'PUT',
@@ -1013,15 +1398,245 @@ async function saveInputForm(inputs, saveBtn) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body?.error?.message || `HTTP ${res.status}`);
     }
-    msg.textContent = '保存しました';
-    msg.className = 'ok';
+    msg.textContent = '保存しました（報告文への反映はスプレッドシートの再計算後に反映されます）';
+    msg.className = 'save-msg ok';
+    // 保存した内容が次の再描画で古いまま出ないよう、そのタブのキャッシュだけ捨てる
+    delete sheetCache[currentSheet()];
   } catch (e) {
     msg.textContent = '保存に失敗しました（入力内容は消えていません）：' + e.message;
-    msg.className = 'error';
+    msg.className = 'save-msg error';
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = '保存';
   }
+}
+
+// ◆見出しの直下にある長文セルを、崩さず等幅で見せてコピーできるようにする
+function buildReportTextCard(sec, label) {
+  const body = (sec.rows.find(r => r && r[0]) || [])[0] || '';
+  const card = document.createElement('div');
+  card.className = 'report-block';
+
+  const h = document.createElement('h2');
+  h.style.cssText = 'font-size:15px;margin:0 0 12px;font-weight:700;';
+  h.textContent = `${label}（Slackへコピー）`;
+  card.appendChild(h);
+
+  if (!String(body).trim()) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-note';
+    empty.textContent = 'まだ生成されていません（スプレッドシートの自動更新後に表示されます）。';
+    card.appendChild(empty);
+    return card;
+  }
+
+  const pre = document.createElement('pre');
+  pre.textContent = body;
+  card.appendChild(pre);
+
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'コピー';
+  btn.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(body);
+      btn.textContent = 'コピーしました';
+      btn.classList.add('done');
+      setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('done'); }, 1800);
+    } catch (e) {
+      // クリップボードが使えない環境では選択状態にして手動コピーに委ねる
+      const range = document.createRange();
+      range.selectNodeContents(pre);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      btn.textContent = '選択しました（Ctrl+Cでコピー）';
+      setTimeout(() => { btn.textContent = 'コピー'; }, 2600);
+    }
+  };
+  card.appendChild(btn);
+  return card;
+}
+
+// 月報転記ブロック（指標／目標／結果／達成率／備考）は達成率をバーで見せる
+function buildMonthlyBlock(sec) {
+  const wrap = document.createElement('div');
+  addTitle(wrap, '月報転記ブロック（パワポにこの順で転記）');
+  const rows = dataRowsOf(sec);
+  if (!rows.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-note';
+    empty.textContent = 'まだ生成されていません。';
+    wrap.appendChild(empty);
+    return wrap;
+  }
+
+  const header = rows[0] || [];
+  const iRate = header.indexOf('達成率');
+  const grid = document.createElement('div');
+  grid.className = 'tile-grid';
+
+  rows.slice(1).forEach(r => {
+    const rate = iRate >= 0 ? pct(toPercentText(r[iRate])) : null;
+    // 「不足の内訳」「行動変化」のような数値を持たない行はタイルにせず表に回す
+    if (rate === null && !(r[1] || r[2])) return;
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+
+    const head = document.createElement('div');
+    head.className = 'tile-head';
+    const name = document.createElement('span');
+    name.className = 'tile-name';
+    name.textContent = r[0] || '';
+    head.appendChild(name);
+    if (rate !== null) {
+      const status = document.createElement('span');
+      const tone = rate >= 100 ? 'good' : rate >= 80 ? 'warning' : 'critical';
+      status.className = 'tile-status ' + tone;
+      status.textContent = `達成率 ${Math.round(rate)}%`;
+      head.appendChild(status);
+    }
+
+    const val = document.createElement('div');
+    val.className = 'tile-value';
+    val.textContent = fmtNum(r[2]);
+    if (r[1]) {
+      const of = document.createElement('span');
+      of.className = 'of';
+      of.textContent = `/ ${fmtNum(r[1])}（目標）`;
+      val.appendChild(of);
+    }
+
+    tile.append(head, val);
+    if (rate !== null) tile.appendChild(makeBar(rate, toneColor(rate >= 100 ? 'good' : rate >= 80 ? 'warning' : 'critical')));
+    if (r[4]) {
+      const note = document.createElement('div');
+      note.className = 'tile-note';
+      note.textContent = r[4];
+      tile.appendChild(note);
+    }
+    grid.appendChild(tile);
+  });
+  if (grid.children.length) wrap.appendChild(grid);
+
+  // 数値にならない行（不足の内訳・行動変化など）は表としてそのまま残す
+  const rest = rows.slice(1).filter(r => {
+    const rate = iRate >= 0 ? pct(toPercentText(r[iRate])) : null;
+    return rate === null && !(r[1] || r[2]);
+  });
+  if (rest.length) wrap.appendChild(buildTable([header].concat(rest)));
+  return wrap;
+}
+
+// ── 分析パネル ────────────────────────────────────
+function renderAnalysisPanels(isTeam, own, analysis) {
+  const general = document.getElementById('sub-general');
+  const katsudo = document.getElementById('sub-katsudo');
+  const shodan = document.getElementById('sub-shodan');
+
+  if (isTeam) {
+    // 架電＝■3 活動相関、商談＝■6 商談分析、それ以外は全般へ
+    analysis.sections.forEach(sec => {
+      if (/^■3\./.test(sec.title)) return renderSection(katsudo, sec);
+      if (/^■6\./.test(sec.title)) return renderShodanScores(shodan, sec, null);
+      renderSection(general, sec);
+    });
+  } else {
+    // メンバーは本人タブの■6（架電スタッツ）と、分析タブ■6を担当で絞った採点表
+    const own6 = findSection(own, t => /^■6\./.test(t));
+    if (own6) renderStatStrip(katsudo, own6);
+    const sec6 = findSection(analysis, t => /^■6\./.test(t));
+    if (sec6) renderShodanScores(shodan, sec6, selectedMember);
+  }
+
+  if (!katsudo.children.length) katsudo.innerHTML = '<div class="empty-note">架電分析のデータがありません。</div>';
+  if (!shodan.children.length) shodan.innerHTML = '<div class="empty-note">商談分析のデータがありません。</div>';
+}
+
+// 1行だけの指標群（架電数／接続率／アポ獲得など）を小タイルで並べる。
+// 「ヘッダー＋値1行」のときだけ有効で、複数行ある表（分析タブのデータ品質等）は表のまま出す。
+function renderStatStrip(root, sec) {
+  const rows = dataRowsOf(sec);
+  if (rows.length !== 2) return renderGenericTable(root, sec);
+
+  addTitle(root, sec.title);
+  const header = rows[0], vals = rows[1];
+  const strip = document.createElement('div');
+  strip.className = 'stat-strip';
+  header.forEach((k, i) => {
+    if (!k) return;
+    const item = document.createElement('div');
+    item.className = 'stat-item';
+    const kEl = document.createElement('div');
+    kEl.className = 'k';
+    kEl.textContent = k;
+    const vEl = document.createElement('div');
+    vEl.className = 'v';
+    vEl.textContent = /率$/.test(k) ? toPercentText(vals[i]) : fmtNum(vals[i]);
+    item.append(kEl, vEl);
+    strip.appendChild(item);
+  });
+  root.appendChild(strip);
+}
+
+// 商談分析の採点表。担当が指定されたらその人の行だけに絞る
+function renderShodanScores(root, sec, onlyMember) {
+  addTitle(root, onlyMember ? `商談分析（${onlyMember}さん分）` : sec.title);
+  const rows = dataRowsOf(sec);
+  if (!rows.length) return;
+
+  const header = rows[0] || [];
+  const iOwner = header.indexOf('担当');
+  const iRank = header.indexOf('ランク');
+  const iTotal = header.findIndex(h => String(h).startsWith('合計'));
+
+  let body = rows.slice(1);
+  if (onlyMember && iOwner >= 0) {
+    body = body.filter(r => String(r[iOwner] || '').includes(onlyMember));
+  }
+  if (!body.length) {
+    root.appendChild(Object.assign(document.createElement('div'), {
+      className: 'empty-note',
+      textContent: onlyMember ? `${onlyMember}さんの採点済み商談はまだありません。` : '採点済みの商談がありません。',
+    }));
+    return;
+  }
+
+  const scroll = document.createElement('div');
+  scroll.className = 'table-scroll';
+  const table = document.createElement('table');
+
+  const htr = document.createElement('tr');
+  htr.className = 'header-row';
+  header.forEach(h => {
+    const td = document.createElement('td');
+    td.textContent = h;
+    htr.appendChild(td);
+  });
+  table.appendChild(htr);
+
+  body.forEach(r => {
+    const tr = document.createElement('tr');
+    header.forEach((_, i) => {
+      const td = document.createElement('td');
+      if (i === iRank && r[i]) {
+        const b = document.createElement('span');
+        const rank = String(r[i]).trim().toUpperCase();
+        b.className = 'rank-badge rank-' + (['A', 'B', 'C', 'D'].includes(rank) ? rank.toLowerCase() : 'c');
+        b.textContent = r[i];
+        td.appendChild(b);
+      } else if (i === iTotal && r[i] !== undefined && r[i] !== '') {
+        td.textContent = fmtNum(r[i]);
+      } else {
+        td.textContent = fmtCell(r[i]);
+      }
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+
+  scroll.appendChild(table);
+  root.appendChild(scroll);
 }
 
 function showStatus(msg, isError) {
@@ -1032,69 +1647,6 @@ function showStatus(msg, isError) {
 }
 function hideStatus() {
   document.getElementById('statusMsg').style.display = 'none';
-}
-
-// Google Sheetsの生データを ■見出し ごとのセクションに切り分け、
-// 見出しに応じた専用の描画（タイル・ファネル・カード等）に振り分ける。
-// 未知の見出しは従来どおり表として描画するので、スプシ側にセクションが増えても壊れない。
-function renderDashboard(rows) {
-  const root = document.getElementById('panel-overview');
-  const membersRoot = document.getElementById('panel-members');
-  root.innerHTML = '';
-  membersRoot.innerHTML = '';
-
-  let i = 0;
-  // 先頭の非■行はヒーロー（タイトル＋期間＋四半期の経過率リング）として扱う
-  if (rows[0] && rows[0][0] && !rows[0][0].startsWith('■')) {
-    const hero = document.createElement('div');
-    hero.className = 'hero';
-
-    const text = document.createElement('div');
-    text.className = 'hero-text';
-    const h = document.createElement('h2');
-    h.textContent = rows[0][0];
-    text.appendChild(h);
-    i = 1;
-
-    let elapsedPct = null;
-    if (rows[1] && rows[1][0] && !rows[1][0].startsWith('■')) {
-      const p = document.createElement('div');
-      p.className = 'period';
-      // 「／」区切りの期間表記を項目ごとに分けて折り返しやすくする
-      rows[1][0].split('／').forEach(part => {
-        const span = document.createElement('span');
-        span.textContent = part.trim();
-        p.appendChild(span);
-      });
-      text.appendChild(p);
-      i = 2;
-      // 「Q(6/1〜8/31) 29/64営業日(45%)」のような表記から四半期の経過率を抜く
-      const m = rows[1][0].match(/Q\([^)]*\)[^(]*\((\d+)%\)/);
-      if (m) elapsedPct = Number(m[1]);
-    }
-    hero.appendChild(text);
-    if (elapsedPct !== null) hero.appendChild(buildProgressRing(elapsedPct, '四半期 経過'));
-    root.appendChild(hero);
-  }
-
-  // ■見出しごとにセクション分割（空行は区切りとして保持）
-  const sections = [];
-  let cur = null;
-  for (; i < rows.length; i++) {
-    const row = rows[i];
-    const first = (row && row[0]) ? String(row[0]) : '';
-    if (first.startsWith('■')) {
-      cur = { title: first, rows: [] };
-      sections.push(cur);
-      continue;
-    }
-    if (!cur) continue;
-    cur.rows.push(row && row.length ? row : []);
-  }
-
-  sections.forEach(sec => renderSection(sec.title.startsWith('■③') ? membersRoot : root, sec));
-  reveal(root);
-  reveal(membersRoot);
 }
 
 // カード群は読み込み時に一括で動かすのではなく、スクロールして実際に画面へ入ってきた瞬間に浮き上がらせる
@@ -1120,13 +1672,225 @@ function renderSection(root, sec) {
   // Sheets側の埋め込みグラフへの案内行は、HTML側で実グラフを描くため不要
   if (t.startsWith('■ グラフ（')) return;
 
+  // ── 1係全体（ダッシュボードタブ）の丸数字セクション ──
   if (t.startsWith('■①') && !t.startsWith("■①'")) return renderGoalTiles(root, sec);
   if (t.startsWith('■②')) return renderFunnel(root, sec);
   if (t.startsWith('■③')) return renderMemberCards(root, sec);
   if (t.startsWith('■④')) return renderActions(root, sec);
   if (t.startsWith('■⑤')) return renderNotice(root, sec);
   if (t.startsWith('■ グラフ用データ')) return renderCharts(root, sec);
+
+  // ── メンバー個人タブ／分析タブの半角数字セクション ──
+  if (/^■1\./.test(t)) return renderPeriodTargets(root, sec);   // 目標対比（メンバー）／セグメント別転換率（分析）
+  if (/^■2\./.test(t)) return renderCompare(root, sec);         // 本人vs係平均（メンバー）／失注理由（分析）
+  if (/^■3\./.test(t)) return renderPassedDeals(root, sec);     // パスした案件（メンバー）／活動相関（分析）
+  if (/^■4\./.test(t)) return renderTrend(root, sec);           // 週次トレンド（メンバー）／滞留案件（分析）
+  if (/^■5\./.test(t)) return renderStatStrip(root, sec);       // 先行在庫と必要自アポ（メンバー）／データ品質（分析）
+
   return renderGenericTable(root, sec);
+}
+
+// ── 表示用の小さなヘルパー ────────────────────────────
+// Sheetsは「5/16」のような表記を日付として自動解釈してしまうことがある。
+// APIからは日付シリアル値しか返らず元の表記は復元できないため、印だけ付けて気付けるようにする。
+function looksLikeDateSerial(v) {
+  const n = Number(v);
+  return isFinite(n) && n > 40000 && n < 60000 && String(v).indexOf('/') < 0;
+}
+function markSuspect(v) {
+  if (v === undefined || v === null) return '';
+  return String(v);
+}
+// パス日・予定日など「本来日付の列」もシリアル値で降ってくる。表の中では読める日付に直す。
+// （KPIの件数がこの範囲に入ることはないので、日付として解釈して差し支えない）
+const SHEETS_EPOCH_UTC = Date.UTC(1899, 11, 30);
+function serialToDateText(v) {
+  const d = new Date(SHEETS_EPOCH_UTC + Number(v) * 86400000);
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+}
+function fmtCell(v) {
+  if (v === undefined || v === null) return '';
+  return looksLikeDateSerial(v) ? serialToDateText(v) : String(v);
+}
+// 小数の余計な .0 を落とす。0.21 のような率はそのまま返す
+function fmtNum(v) {
+  if (v === undefined || v === null || v === '') return '';
+  const n = Number(v);
+  if (!isFinite(n)) return String(v);
+  return String(Math.round(n * 100) / 100);
+}
+// 0.21 → 21%、「21%」→「21%」に揃える
+function toPercentText(v) {
+  if (v === undefined || v === null || v === '') return '';
+  const s = String(v);
+  if (s.includes('%')) return s;
+  const n = Number(v);
+  if (!isFinite(n)) return s;
+  return Math.round(n * 100) + '%';
+}
+// 「53/60」形式を{done,target,ratio}に。日付に化けた値・非数値はnull
+function parseFraction(v) {
+  const m = String(v == null ? '' : v).match(/^\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/);
+  if (!m) return null;
+  const done = Number(m[1]), target = Number(m[2]);
+  return { done, target, ratio: target > 0 ? (done / target) * 100 : 0 };
+}
+
+// ■1：メンバーの「期間×指標」の目標対比（53/60形式）はタイル、
+// それ以外（分析タブのセグメント別転換率など）は表で見せる
+function renderPeriodTargets(root, sec) {
+  const rows = dataRowsOf(sec);
+  const hasFraction = rows.slice(1).some(r => r.slice(1).some(c => parseFraction(c)));
+  if (!hasFraction) return renderGenericTable(root, sec);
+
+  addTitle(root, sec.title);
+  const header = rows[0] || [];
+  const grid = document.createElement('div');
+  grid.className = 'tile-grid';
+
+  rows.slice(1).forEach(r => {
+    header.slice(1).forEach((metric, idx) => {
+      const cell = r[idx + 1];
+      const fr = parseFraction(cell);
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+
+      const head = document.createElement('div');
+      head.className = 'tile-head';
+      const name = document.createElement('span');
+      name.className = 'tile-name';
+      name.textContent = `${r[0]}／${metric}`;
+      head.appendChild(name);
+
+      if (fr) {
+        const tone = fr.ratio >= 100 ? 'good' : fr.ratio >= 80 ? 'warning' : 'critical';
+        const status = document.createElement('span');
+        status.className = 'tile-status ' + tone;
+        status.textContent = `${Math.round(fr.ratio)}%`;
+        head.appendChild(status);
+      }
+
+      const val = document.createElement('div');
+      val.className = 'tile-value';
+      if (fr) {
+        const num = document.createElement('span');
+        num.textContent = '0';
+        val.appendChild(num);
+        const of = document.createElement('span');
+        of.className = 'of';
+        of.textContent = `/ ${fmtNum(fr.target)}`;
+        val.appendChild(of);
+        animateCountUp(num, fr.done);
+      } else if (looksLikeDateSerial(cell)) {
+        // 日付に化けているのでそのまま出しつつ、要確認の印を付ける
+        const bad = document.createElement('span');
+        bad.className = 'suspect';
+        bad.style.fontSize = '18px';
+        bad.textContent = fmtNum(cell);
+        bad.title = 'スプレッドシート側で日付に変換されてしまった値です（要確認）';
+        val.appendChild(bad);
+      } else {
+        val.textContent = markSuspect(cell);
+      }
+
+      tile.append(head, val);
+      if (fr) {
+        const tone = fr.ratio >= 100 ? 'good' : fr.ratio >= 80 ? 'warning' : 'critical';
+        tile.appendChild(makeBar(fr.ratio, toneColor(tone)));
+      }
+      grid.appendChild(tile);
+    });
+  });
+
+  root.appendChild(grid);
+}
+
+// ■2：2行の比較（本人 vs 係平均）は並列バー、それ以外は表
+function renderCompare(root, sec) {
+  const rows = dataRowsOf(sec);
+  // 先頭行の1列目が空＝ヘッダーが指標名の並びになっている比較表
+  const isCompare = rows.length >= 3 && rows.slice(1, 3).every(r => r[0] && r.length > 2);
+  if (!isCompare) return renderGenericTable(root, sec);
+
+  addTitle(root, sec.title);
+  const header = rows[0] || [];
+  const labels = header.slice(1).map((h, i) => h || `指標${i + 1}`);
+  // buildGroupedBarChartは[カテゴリ列名, 系列名...]を期待するので行列を入れ替える
+  const seriesRows = rows.slice(1, 3);
+  const chartHeader = ['指標'].concat(seriesRows.map(r => r[0]));
+  const chartRows = labels.map((lab, i) => [lab].concat(seriesRows.map(r => {
+    const n = Number(r[i + 1]);
+    return isFinite(n) ? (n <= 1 ? n * 100 : n) : 0; // 0.21のような率は%に直して比較しやすくする
+  })));
+  root.appendChild(buildGroupedBarChart(chartHeader, chartRows));
+  root.appendChild(buildTable(rows.slice(0, 3)));
+  if (rows.length > 3) root.appendChild(buildTable(rows.slice(3)));
+}
+
+// ■3：メンバーは「パス後の件数ファネル＋案件一覧」、分析タブは週次の活動相関
+function renderPassedDeals(root, sec) {
+  addTitle(root, sec.title);
+  const rows = dataRowsOf(sec);
+  if (!rows.length) return;
+
+  // 数値だけの行が1本あればファネル、そうでなければ週次データとしてグラフ＋表
+  const header = rows[0] || [];
+  const numericRow = rows[1] && rows[1].every(c => c === '' || isFinite(Number(c))) ? rows[1] : null;
+
+  if (numericRow && rows.length >= 2) {
+    const card = document.createElement('div');
+    card.className = 'funnel-card';
+    const wrap = document.createElement('div');
+    wrap.className = 'funnel';
+    const vals = header.map((_, i) => Number(numericRow[i]) || 0);
+    const maxV = Math.max(1, ...vals);
+    header.forEach((label, i) => {
+      if (!label) return;
+      const step = document.createElement('div');
+      step.className = 'funnel-step';
+      step.innerHTML = '<div class="n"></div><div class="bar"></div><div class="l"></div>';
+      step.querySelector('.n').textContent = fmtNum(numericRow[i]);
+      step.querySelector('.bar').style.width = Math.max(20, (vals[i] / maxV) * 100) + '%';
+      step.querySelector('.bar').style.margin = '8px auto 6px';
+      step.querySelector('.l').textContent = label;
+      wrap.appendChild(step);
+    });
+    card.appendChild(wrap);
+    root.appendChild(card);
+    if (rows.length > 2) root.appendChild(buildTable(rows.slice(2)));
+    return;
+  }
+
+  // 週次の活動相関（週／架電数／アポ獲得／転換率）はグラフ＋表
+  const chartRows = rows.slice(1)
+    .filter(r => r[0])
+    .map(r => [String(r[0]), Number(r[1]) || 0, Number(r[2]) || 0]);
+  if (chartRows.length && header.length >= 3) {
+    root.appendChild(buildGroupedBarChart([header[0], header[1], header[2]], chartRows));
+  }
+  root.appendChild(buildTable(rows));
+}
+
+// ■4：メンバーの週次トレンド（行＝系列・列＝週）は棒グラフ、それ以外は表
+function renderTrend(root, sec) {
+  addTitle(root, sec.title);
+  const rows = dataRowsOf(sec);
+  if (!rows.length) return;
+
+  const header = rows[0] || [];
+  const series = rows.slice(1).filter(r => r[0]);
+  // ヘッダーの2列目以降が週ラベルで、以降の行が系列になっている形
+  const looksMatrix = series.length >= 1 && series.every(r => r.slice(1).every(c => c === '' || isFinite(Number(c))));
+  if (looksMatrix && header.length > 2) {
+    // 週を行に、系列を列に入れ替えてbuildGroupedBarChartに渡す
+    const weeks = header.slice(1).map((h, i) => h || `週${i + 1}`);
+    const chartHeader = ['週'].concat(series.map(r => r[0]));
+    const chartRows = weeks.map((w, i) => [w].concat(series.map(r => Number(r[i + 1]) || 0)));
+    root.appendChild(buildGroupedBarChart(chartHeader, chartRows));
+    root.appendChild(buildTable(rows));
+    return;
+  }
+  root.appendChild(buildTable(rows));
 }
 
 function addTitle(root, text) {
@@ -1532,7 +2296,7 @@ function buildTable(rows) {
     if (looksLikeHeader) tr.className = 'header-row';
     row.forEach(cell => {
       const td = document.createElement('td');
-      td.textContent = cell;
+      td.textContent = fmtCell(cell); // 日付シリアル値は読める日付に直す
       tr.appendChild(td);
     });
     table.appendChild(tr);
