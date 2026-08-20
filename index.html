@@ -733,12 +733,14 @@ const SPREADSHEET_ID = '1qHftqur_IDqjc97VnfMopSnMeQj6z5U-m5x68O1Ahkw';
 const SHEET_RANGE = 'ダッシュボード'; // タブ名のみ＝実データがある範囲を自動取得（列I等の追加列があっても切れない）
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email';
 
-// ログイン中のメールアドレス → 本人の手入力タブ名（メンバー4名のみ。それ以外は閲覧のみ）
+// ログイン中のメールアドレス → 本人が書き込めるタブ（tab）と、画面表示用の呼び方（label）。
+// tabとlabelが異なるのは増田さんだけ（書き込み先は「報告」タブだが、本人は「報告さん」ではないため）
 const MEMBER_MAP = {
-  'kazumasasugawara@shikigaku.com': '菅原',
-  'kayomaruno@shikigaku.com': '丸野',
-  'wataruebato@shikigaku.com': '江波戸',
-  'takahiroiiyama@shikigaku.com': '飯山',
+  'kazumasasugawara@shikigaku.com': { tab: '菅原', label: '菅原' },
+  'kayomaruno@shikigaku.com':       { tab: '丸野', label: '丸野' },
+  'wataruebato@shikigaku.com':      { tab: '江波戸', label: '江波戸' },
+  'takahiroiiyama@shikigaku.com':   { tab: '飯山', label: '飯山' },
+  'koumeimasuda@shikigaku.com':     { tab: '報告', label: '増田' },
 };
 
 // kpi-v3-core.js の MEMBER_MANUAL_CELLS と1対1で対応（B4:B17・この順序のまま）
@@ -759,12 +761,31 @@ const MEMBER_MANUAL_CELLS = [
   { key: 'nextWeekClose',  label: '【週報】次週の約束：新規獲得数', type: 'number' },
 ];
 
+// 「報告」タブ（係全体の日報・週報・月報／増田さん用）の手入力セル。B4:B15・この順序のまま
+const REPORT_MANUAL_CELLS = [
+  { key: 'nextDayShadan', label: '【日次】次営業日の約束：商談実施数', type: 'number' },
+  { key: 'nextDayYotei',  label: '【日次】次営業日の約束：商談予定数（分かれば）', type: 'number' },
+  { key: 'nextDayP2',     label: '【日次】次営業日の約束：P2提案獲得数', type: 'number' },
+  { key: 'reasonShadan',  label: '【週報】不足の理由：商談実施数', type: 'textarea' },
+  { key: 'reasonP2',      label: '【週報】不足の理由：提案獲得', type: 'textarea' },
+  { key: 'reasonNew',     label: '【週報】不足の理由：新規', type: 'textarea' },
+  { key: 'weeklyAction',  label: '【週報】行動変化', type: 'textarea' },
+  { key: 'nextWeekShadan', label: '【週報】次週の目標：商談実施数（空欄なら自動按分）', type: 'number' },
+  { key: 'nextWeekYotei',  label: '【週報】次週の目標：商談予定数', type: 'number' },
+  { key: 'nextWeekP2',     label: '【週報】次週の目標：P2移行数（空欄なら自動按分）', type: 'number' },
+  { key: 'nextWeekNew',    label: '【週報】次週の目標：新規獲得件数（空欄なら自動按分）', type: 'number' },
+  { key: 'monthlyAction',  label: '【月報】行動変化', type: 'textarea' },
+];
+
+// タブ名からその手入力セル定義を引く（B4始まりなので、行の終端は 3+件数 で自動的に決まる）
+function manualCellsFor(tab) { return tab === '報告' ? REPORT_MANUAL_CELLS : MEMBER_MANUAL_CELLS; }
+
 const AUTO_SIGNIN_KEY = 'kpiDashboardAutoSignIn'; // 「前回サインイン済み」だけを覚える（トークン自体は保存しない）
 const REFRESH_MARGIN_SEC = 300; // トークン期限の5分前に、画面を止めずに裏側だけで更新する
 
 let tokenClient;
 let accessToken = null;
-let myTab = null; // ログインユーザーが本人入力可能なタブ名（該当なしならnull＝閲覧のみ）
+let myProfile = null; // ログインユーザーの{tab, label}（該当なしならnull＝閲覧のみ）。tabがSheetsの書き込み先、labelが画面表示名
 let hasCompletedSignIn = false; // 初回サインインが完了した後は、以降のトークン更新で画面を再描画しない
 let isAutoSignInAttempt = false; // 再訪問時の自動サインイン試行中フラグ（失敗してもエラー表示しない）
 let refreshTimer = null;
@@ -856,16 +877,16 @@ async function completeSignIn() {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const user = await userRes.json();
-    myTab = MEMBER_MAP[user.email] || null;
+    myProfile = MEMBER_MAP[user.email] || null;
     document.getElementById('userBox').style.display = 'flex';
-    document.getElementById('userName').textContent = myTab ? `${myTab}さん` : (user.email || 'ログイン中');
-    document.getElementById('userAvatar').textContent = (myTab || user.email || '?').charAt(0);
+    document.getElementById('userName').textContent = myProfile ? `${myProfile.label}さん` : (user.email || 'ログイン中');
+    document.getElementById('userAvatar').textContent = (myProfile?.label || user.email || '?').charAt(0);
   } catch (e) {
     showStatus('ユーザー情報の取得に失敗しました：' + e.message, true);
   }
 
   document.getElementById('tabNav').style.display = 'flex';
-  if (myTab) {
+  if (myProfile) {
     document.getElementById('tabBtnInput').style.display = 'inline-block';
     await loadInputForm();
   } else {
@@ -908,9 +929,14 @@ async function loadDashboard() {
   }
 }
 
-// ── 本人入力フォーム（REQ-03）─────────────────────
+// ── 本人入力フォーム（REQ-03・報告タブはREQ-06）─────────────────────
+function inputRangeFor(tab, cells) {
+  return `'${tab}'!B4:B${3 + cells.length}`;
+}
+
 async function loadInputForm() {
-  const range = `'${myTab}'!B4:B17`;
+  const cells = manualCellsFor(myProfile.tab);
+  const range = inputRangeFor(myProfile.tab, cells);
   let currentValues = [];
   try {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
@@ -929,11 +955,11 @@ async function loadInputForm() {
   const form = document.getElementById('inputForm');
   form.innerHTML = '';
   const h = document.createElement('h2');
-  h.textContent = `${myTab}さんの入力フォーム`;
+  h.textContent = `${myProfile.label}さんの入力フォーム`;
   form.appendChild(h);
 
   const inputs = [];
-  MEMBER_MANUAL_CELLS.forEach((def, i) => {
+  cells.forEach((def, i) => {
     const row = document.createElement('div');
     row.className = 'field-row';
     const label = document.createElement('label');
@@ -973,7 +999,7 @@ async function saveInputForm(inputs, saveBtn) {
   const values = inputs.map(inp => [inp.value]); // 失敗時もinputの値はそのまま残るので入力内容は失われない（REQ-05）
 
   try {
-    const range = `'${myTab}'!B4:B17`;
+    const range = inputRangeFor(myProfile.tab, manualCellsFor(myProfile.tab));
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
     const res = await fetch(url, {
       method: 'PUT',
