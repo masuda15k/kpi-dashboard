@@ -953,20 +953,21 @@ const MEMBER_MANUAL_CELLS = [
   { key: 'nextWeekClose',  label: '【週報】次週の約束：新規獲得数', type: 'number' },
 ];
 
-// 「報告」タブ（係全体の日報・週報・月報／増田さん用）の手入力セル。B4:B15・この順序のまま
+// 「報告」タブ（係全体の日報・週報・月報／増田さん用）の手入力セル。B4:B15・この順序のまま。
+// keyは kpi-v3-core.js の REPORT_MANUAL_CELLS と同名に揃えてある（スプシ側は位置で読むがラベル対応の追跡用）
 const REPORT_MANUAL_CELLS = [
-  { key: 'nextDayShadan', label: '【日次】次営業日の約束：商談実施数', type: 'number' },
-  { key: 'nextDayYotei',  label: '【日次】次営業日の約束：商談予定数（分かれば）', type: 'number' },
-  { key: 'nextDayP2',     label: '【日次】次営業日の約束：P2提案獲得数', type: 'number' },
-  { key: 'reasonShadan',  label: '【週報】不足の理由：商談実施数', type: 'textarea' },
-  { key: 'reasonP2',      label: '【週報】不足の理由：提案獲得', type: 'textarea' },
-  { key: 'reasonNew',     label: '【週報】不足の理由：新規', type: 'textarea' },
-  { key: 'weeklyAction',  label: '【週報】行動変化', type: 'textarea' },
-  { key: 'nextWeekShadan', label: '【週報】次週の目標：商談実施数（空欄なら自動按分）', type: 'number' },
-  { key: 'nextWeekYotei',  label: '【週報】次週の目標：商談予定数', type: 'number' },
-  { key: 'nextWeekP2',     label: '【週報】次週の目標：P2移行数（空欄なら自動按分）', type: 'number' },
-  { key: 'nextWeekNew',    label: '【週報】次週の目標：新規獲得件数（空欄なら自動按分）', type: 'number' },
-  { key: 'monthlyAction',  label: '【月報】行動変化', type: 'textarea' },
+  { key: 'nextDayShadan',      label: '【日次】次営業日の約束：商談実施数', type: 'number' },
+  { key: 'nextDayShadanPlan',  label: '【日次】次営業日の約束：商談予定数（分かれば）', type: 'number' },
+  { key: 'nextDayP2',          label: '【日次】次営業日の約束：P2提案獲得数', type: 'number' },
+  { key: 'weeklyReasonS',      label: '【週報】不足の理由：商談実施数', type: 'textarea' },
+  { key: 'weeklyReasonP2',     label: '【週報】不足の理由：提案獲得', type: 'textarea' },
+  { key: 'weeklyReasonC',      label: '【週報】不足の理由：新規', type: 'textarea' },
+  { key: 'weeklyAction',       label: '【週報】行動変化', type: 'textarea' },
+  { key: 'nextWeekShadan',     label: '【週報】次週の目標：商談実施数（空欄なら自動按分）', type: 'number' },
+  { key: 'nextWeekShadanPlan', label: '【週報】次週の目標：商談予定数', type: 'number' },
+  { key: 'nextWeekP2',         label: '【週報】次週の目標：P2移行数（空欄なら自動按分）', type: 'number' },
+  { key: 'nextWeekClose',      label: '【週報】次週の目標：新規獲得件数（空欄なら自動按分）', type: 'number' },
+  { key: 'monthlyAction',      label: '【月報】行動変化', type: 'textarea' },
 ];
 
 // タブ名からその手入力セル定義を引く（B4始まりなので、行の終端は 3+件数 で自動的に決まる）
@@ -1318,7 +1319,7 @@ function renderReportPanel(group, sheet, parsed) {
   const sec = findSection(parsed, t => t.startsWith('◆') && t.includes(REPORT_LABEL[group]));
   if (sec) {
     if (group === 'monthly') root.appendChild(buildMonthlyBlock(sec));
-    else root.appendChild(buildReportTextCard(sec, REPORT_LABEL[group]));
+    else root.appendChild(buildReportTextCard(sec, REPORT_LABEL[group], parsed.title));
   }
 
   if (!grp && !sec) {
@@ -1398,10 +1399,12 @@ async function saveInputGroup(grp, inputs, saveBtn, msg) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body?.error?.message || `HTTP ${res.status}`);
     }
-    msg.textContent = '保存しました（報告文への反映はスプレッドシートの再計算後に反映されます）';
+    msg.textContent = '保存しました';
     msg.className = 'save-msg ok';
-    // 保存した内容が次の再描画で古いまま出ないよう、そのタブのキャッシュだけ捨てる
+    // 保存した内容が次の再描画で古いまま出ないよう、そのタブのキャッシュだけ捨てて読み直す
     delete sheetCache[currentSheet()];
+    await renderCurrentView();
+    activateTab(activeTab); // 再描画でパネルが差し替わるので、開いていたタブを開き直す
   } catch (e) {
     msg.textContent = '保存に失敗しました（入力内容は消えていません）：' + e.message;
     msg.className = 'save-msg error';
@@ -1411,16 +1414,26 @@ async function saveInputGroup(grp, inputs, saveBtn, msg) {
   }
 }
 
-// ◆見出しの直下にある長文セルを、崩さず等幅で見せてコピーできるようにする
-function buildReportTextCard(sec, label) {
+// ◆見出しの直下にある長文セルを、崩さず等幅で見せてコピーできるようにする。
+// この文面はスプシ側のスクリプト（平日16:55実行）が生成した「時点もの」で、
+// 上の入力欄をここで保存しても即座には反映されない（次回のスクリプト実行まで変わらない）ため、その旨を明示する。
+function buildReportTextCard(sec, label, titleLine) {
   const body = (sec.rows.find(r => r && r[0]) || [])[0] || '';
   const card = document.createElement('div');
   card.className = 'report-block';
 
   const h = document.createElement('h2');
-  h.style.cssText = 'font-size:15px;margin:0 0 12px;font-weight:700;';
+  h.style.cssText = 'font-size:15px;margin:0 0 6px;font-weight:700;';
   h.textContent = `${label}（Slackへコピー）`;
   card.appendChild(h);
+
+  const asOf = document.createElement('div');
+  asOf.style.cssText = 'font-size:12px;color:var(--muted-2);margin-bottom:12px;';
+  const m = String(titleLine || '').match(/更新[:：]\s*(.+)$/);
+  asOf.textContent = m
+    ? `${m[1]} 時点の内容です。上の入力欄を保存しても、この文面は次回の自動更新（平日16:55）まで変わりません。`
+    : '上の入力欄を保存しても、この文面は次回の自動更新（平日16:55）まで変わりません。';
+  card.appendChild(asOf);
 
   if (!String(body).trim()) {
     const empty = document.createElement('div');
