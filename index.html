@@ -542,6 +542,41 @@
   .detail-disclosure summary:hover { color: var(--text); border-color: var(--accent); }
   .detail-disclosure .table-scroll { margin-top: 10px; }
 
+  /* ── 過去実績：期セレクター（現状は12期のみ。将来13期が並ぶ枠） ── */
+  .term-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .term-bar-label { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted-2); margin-right: 4px; }
+  .term-btn {
+    background: rgba(255,255,255,.05); border: 1px solid var(--border); color: var(--muted);
+    font-size: 13px; font-weight: 600; padding: 6px 15px; border-radius: 999px;
+  }
+  .term-btn.active { background: var(--accent); border-color: var(--accent); color: #0a0d16; }
+  .term-btn.future { opacity: .35; }
+
+  /* ── 過去実績：詳細データのセクション単位アコーディオン ── */
+  .section-disclosure {
+    background: var(--card);
+    border: 1px solid rgba(20,22,31,.055);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-glass);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .section-disclosure summary {
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .section-disclosure summary::-webkit-details-marker { display: none; }
+  .section-disclosure summary::after { content: '▾'; color: var(--muted-2); font-size: 11px; }
+  .section-disclosure[open] summary { border-bottom: 1px solid var(--border); }
+  .section-disclosure .table-scroll { margin: 14px 16px 16px; }
+  .section-disclosure .table-scroll table { margin: 0; }
+
   /* ── メンバーカード ── */
   /* ── 同格を水平線で揃える：識学の組織図の作法をそのまま借りる。全員が同じ基準線の上に立つ ── */
   .rank-strip {
@@ -918,12 +953,14 @@
     <button class="tab-btn" data-tab="weekly">週報</button>
     <button class="tab-btn" data-tab="monthly" id="tabBtnMonthly">月報</button>
     <button class="tab-btn" data-tab="analysis">分析</button>
+    <button class="tab-btn" data-tab="pastresults" id="tabBtnPastResults">過去実績</button>
   </nav>
 
   <div id="panel-dashboard" class="tab-panel active"></div>
   <div id="panel-daily" class="tab-panel"></div>
   <div id="panel-weekly" class="tab-panel"></div>
   <div id="panel-monthly" class="tab-panel"></div>
+  <div id="panel-pastresults" class="tab-panel"></div>
   <div id="panel-analysis" class="tab-panel">
     <!-- L3：分析タブの中だけの切替 -->
     <div class="seg" id="analysisSeg">
@@ -947,6 +984,7 @@ const SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleap
 const SHEET_DASHBOARD = 'ダッシュボード'; // 1係全体のダッシュボード
 const SHEET_REPORT    = '報告';           // 1係全体の日報・週報・月報（増田さんの入力先）
 const SHEET_ANALYSIS  = '分析';           // 1係全体の分析（架電・商談分析を含む）
+const SHEET_PAST_RESULTS = '過去実績';    // 1係全体・期ごとの通しレポート（現状は12期のみ）
 const MEMBERS = ['菅原', '丸野', '飯山']; // 個人タブを持つメンバー（表示順）。2026-09-01：江波戸さん異動につき除外
 
 // ログイン中のメールアドレス → 本人が書き込めるタブ（tab）と、画面表示用の呼び方（label）。
@@ -1181,6 +1219,10 @@ function applyTabVisibility(isTeam) {
   document.getElementById('tabBtnMonthly').style.display = isTeam ? 'inline-block' : 'none';
   if (!isTeam && activeTab === 'monthly') activateTab('dashboard');
 
+  // 過去実績は1係全体の期通しレポート。メンバー個人タブには対応データが無い
+  document.getElementById('tabBtnPastResults').style.display = isTeam ? 'inline-block' : 'none';
+  if (!isTeam && activeTab === 'pastresults') activateTab('dashboard');
+
   // 分析の「全般」（セグメント別転換率・失注理由・滞留・データ品質）は1係全体のみ
   document.getElementById('segBtnGeneral').style.display = isTeam ? 'inline-block' : 'none';
   if (!isTeam && activeSub === 'general') activateSub('katsudo');
@@ -1251,13 +1293,13 @@ function inputValuesFrom(parsed) {
 }
 
 // ── 画面全体の再描画 ────────────────────────────────
-const PANEL_IDS = ['dashboard', 'daily', 'weekly', 'monthly'];
+const PANEL_IDS = ['dashboard', 'daily', 'weekly', 'monthly', 'pastresults'];
 const SUB_IDS = ['general', 'katsudo', 'shodan'];
 
 async function renderCurrentView() {
   const isTeam = !selectedMember;
   const sheet = currentSheet();
-  const need = isTeam ? [SHEET_DASHBOARD, SHEET_REPORT, SHEET_ANALYSIS] : [sheet, SHEET_ANALYSIS];
+  const need = isTeam ? [SHEET_DASHBOARD, SHEET_REPORT, SHEET_ANALYSIS, SHEET_PAST_RESULTS] : [sheet, SHEET_ANALYSIS];
 
   showStatus('読み込み中...', false);
   let sheets;
@@ -1287,6 +1329,9 @@ async function renderCurrentView() {
 
   // 分析：全般（1係のみ）／架電分析／商談分析
   renderAnalysisPanels(isTeam, own, analysis);
+
+  // 過去実績：1係全体のみ。期ごとの通しレポート（現状は12期のみ）
+  if (isTeam) renderPastResults(document.getElementById('panel-pastresults'), parseSheet(sheets[SHEET_PAST_RESULTS] || []));
 
   applyTabVisibility(isTeam);
   PANEL_IDS.forEach(id => reveal(document.getElementById('panel-' + id)));
@@ -2334,6 +2379,87 @@ function appendMaybeCollapsible(root, rows) {
   sum.textContent = rows[idx][1] || '詳細を表示';
   det.appendChild(sum);
   det.appendChild(buildTable(detailRows));
+  root.appendChild(det);
+}
+
+// ── 過去実績タブ（期ごとの通しレポート。現状は12期のみ・将来13期が並ぶ枠を用意） ──
+function renderPastResults(root, parsed) {
+  root.innerHTML = '';
+  if (parsed.title) addTitle(root, parsed.title);
+
+  const termBar = document.createElement('div');
+  termBar.className = 'term-bar';
+  termBar.innerHTML = `<span class="term-bar-label">期</span>
+    <button class="term-btn active" disabled>12期</button>
+    <button class="term-btn future" disabled>13期（未開始）</button>`;
+  root.appendChild(termBar);
+
+  parsed.sections.forEach(sec => {
+    const t = sec.title;
+    if (t.startsWith('■①')) return renderPastTiles(root, sec);
+    if (t.startsWith('■②')) return renderPastTrendChart(root, sec);
+    return renderPastDetail(root, sec); // ■③④⑤：普段は畳んでおく生データ
+  });
+}
+
+function tileToneFor(note) {
+  if (!note) return '';
+  if (note.includes('確定') || note.includes('増加')) return 'good';
+  if (note.includes('横ばい')) return 'warning';
+  if (note.includes('減少')) return 'critical';
+  const m = String(note).match(/(\d+)%/);
+  if (m) { const n = Number(m[1]); return n >= 100 ? 'good' : n >= 80 ? 'warning' : 'critical'; }
+  return '';
+}
+
+function renderPastTiles(root, sec) {
+  addTitle(root, sec.title);
+  const rows = dataRowsOf(sec).slice(1); // ['指標','値','補足']ヘッダーを除く
+  const grid = document.createElement('div');
+  grid.className = 'tile-grid';
+  rows.forEach(([label, value, note]) => {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    const head = document.createElement('div');
+    head.className = 'tile-head';
+    const name = document.createElement('span');
+    name.className = 'tile-name';
+    name.textContent = label;
+    head.appendChild(name);
+    if (note) {
+      const status = document.createElement('span');
+      status.className = 'tile-status ' + tileToneFor(note);
+      status.textContent = note;
+      head.appendChild(status);
+    }
+    const val = document.createElement('div');
+    val.className = 'tile-value';
+    val.textContent = fmtCell(value);
+    tile.append(head, val);
+    grid.appendChild(tile);
+  });
+  root.appendChild(grid);
+}
+
+function renderPastTrendChart(root, sec) {
+  addTitle(root, sec.title);
+  const rows = dataRowsOf(sec);
+  if (rows.length < 2) return;
+  const header = rows[0];
+  const chartRows = rows.slice(1).map(r => [r[0], Number(r[1]) || 0, Number(r[2]) || 0]);
+  root.appendChild(buildGroupedBarChart(header, chartRows));
+}
+
+// ■③④⑤：普段は畳んでおく生データ。セクションごと1枚のアコーディオンにする
+function renderPastDetail(root, sec) {
+  const rows = dataRowsOf(sec);
+  if (!rows.length) return;
+  const det = document.createElement('details');
+  det.className = 'section-disclosure';
+  const sum = document.createElement('summary');
+  sum.textContent = sec.title.replace(/^■[③④⑤]\s*/, '');
+  det.appendChild(sum);
+  det.appendChild(buildTable(rows));
   root.appendChild(det);
 }
 
