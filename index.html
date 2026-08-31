@@ -517,6 +517,31 @@
   }
   .funnel-arrow .arrow-ico { display: block; color: var(--muted-2); font-size: 12px; }
 
+  /* ── 歩留まり詳細（普段は隠す・クリックで展開） ── */
+  .detail-disclosure {
+    margin: 10px 0 18px;
+  }
+  .detail-disclosure summary {
+    cursor: pointer;
+    list-style: none;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+  }
+  .detail-disclosure summary::-webkit-details-marker { display: none; }
+  .detail-disclosure summary::before { content: '▸'; font-size: 10px; }
+  .detail-disclosure[open] summary::before { content: '▾'; }
+  .detail-disclosure summary:hover { color: var(--text); border-color: var(--accent); }
+  .detail-disclosure .table-scroll { margin-top: 10px; }
+
   /* ── メンバーカード ── */
   /* ── 同格を水平線で揃える：識学の組織図の作法をそのまま借りる。全員が同じ基準線の上に立つ ── */
   .rank-strip {
@@ -1835,7 +1860,7 @@ function renderCompare(root, sec) {
   })));
   root.appendChild(buildGroupedBarChart(chartHeader, chartRows));
   root.appendChild(buildTable(rows.slice(0, 3)));
-  if (rows.length > 3) root.appendChild(buildTable(rows.slice(3)));
+  appendMaybeCollapsible(root, rows.slice(3));
 }
 
 // ■3：メンバーは「パス後の件数ファネル＋案件一覧」、分析タブは週次の活動相関
@@ -2137,7 +2162,7 @@ function renderFunnel(root, sec) {
   }
 
   const rest = rows.slice(2);
-  if (rest.length) root.appendChild(buildTable(rest));
+  appendMaybeCollapsible(root, rest);
 }
 
 // ■③ メンバー別ペース → 1人1カード。実績/目標を進捗バーで
@@ -2289,6 +2314,27 @@ function renderCharts(root, sec) {
     group.push(r);
   });
   flush();
+}
+
+// スプシ側で '__DETAIL__' センチネル行が見つかったら、それ以降を<details>で折りたたむ
+// （各歩留まりなど、普段は見ないが必要なときだけ開いて見たい項目用）
+function appendMaybeCollapsible(root, rows) {
+  const idx = rows.findIndex(r => r[0] === '__DETAIL__');
+  if (idx < 0) {
+    if (rows.length) root.appendChild(buildTable(rows));
+    return;
+  }
+  const before = rows.slice(0, idx);
+  if (before.length) root.appendChild(buildTable(before));
+  const detailRows = rows.slice(idx + 1);
+  if (!detailRows.length) return;
+  const det = document.createElement('details');
+  det.className = 'detail-disclosure';
+  const sum = document.createElement('summary');
+  sum.textContent = rows[idx][1] || '詳細を表示';
+  det.appendChild(sum);
+  det.appendChild(buildTable(detailRows));
+  root.appendChild(det);
 }
 
 function renderGenericTable(root, sec) {
