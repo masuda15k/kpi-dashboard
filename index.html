@@ -883,7 +883,6 @@
     <button class="member-btn active" data-member="">1係全体</button>
     <button class="member-btn" data-member="菅原">菅原</button>
     <button class="member-btn" data-member="丸野">丸野</button>
-    <button class="member-btn" data-member="江波戸">江波戸</button>
     <button class="member-btn" data-member="飯山">飯山</button>
   </nav>
 
@@ -923,14 +922,13 @@ const SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleap
 const SHEET_DASHBOARD = 'ダッシュボード'; // 1係全体のダッシュボード
 const SHEET_REPORT    = '報告';           // 1係全体の日報・週報・月報（増田さんの入力先）
 const SHEET_ANALYSIS  = '分析';           // 1係全体の分析（架電・商談分析を含む）
-const MEMBERS = ['菅原', '丸野', '江波戸', '飯山']; // 個人タブを持つメンバー（表示順）
+const MEMBERS = ['菅原', '丸野', '飯山']; // 個人タブを持つメンバー（表示順）。2026-09-01：江波戸さん異動につき除外
 
 // ログイン中のメールアドレス → 本人が書き込めるタブ（tab）と、画面表示用の呼び方（label）。
 // tabとlabelが異なるのは増田さんだけ（書き込み先は「報告」タブだが、本人は「報告さん」ではないため）
 const MEMBER_MAP = {
   'kazumasasugawara@shikigaku.com': { tab: '菅原', label: '菅原' },
   'kayomaruno@shikigaku.com':       { tab: '丸野', label: '丸野' },
-  'wataruebato@shikigaku.com':      { tab: '江波戸', label: '江波戸' },
   'takahiroiiyama@shikigaku.com':   { tab: '飯山', label: '飯山' },
   'koumeimasuda@shikigaku.com':     { tab: '報告', label: '増田' },
 };
