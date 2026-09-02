@@ -1194,10 +1194,6 @@ function applyTabVisibility(isTeam) {
   document.getElementById('tabBtnMonthly').style.display = isTeam ? 'inline-block' : 'none';
   if (!isTeam && activeTab === 'monthly') activateTab('dashboard');
 
-  // 過去実績は1係全体の期通しレポート。メンバー個人タブには対応データが無い
-  document.getElementById('tabBtnPastResults').style.display = isTeam ? 'inline-block' : 'none';
-  if (!isTeam && activeTab === 'pastresults') activateTab('dashboard');
-
   // 分析の「全般」（セグメント別転換率・失注理由・滞留・データ品質）は1係全体のみ
   document.getElementById('segBtnGeneral').style.display = isTeam ? 'inline-block' : 'none';
   if (!isTeam && activeSub === 'general') activateSub('katsudo');
@@ -1274,7 +1270,7 @@ const SUB_IDS = ['general', 'katsudo', 'shodan'];
 async function renderCurrentView() {
   const isTeam = !selectedMember;
   const sheet = currentSheet();
-  const need = isTeam ? [SHEET_DASHBOARD, SHEET_REPORT, SHEET_ANALYSIS, SHEET_PAST_RESULTS] : [sheet, SHEET_ANALYSIS];
+  const need = isTeam ? [SHEET_DASHBOARD, SHEET_REPORT, SHEET_ANALYSIS, SHEET_PAST_RESULTS] : [sheet, SHEET_ANALYSIS, SHEET_PAST_RESULTS];
 
   showStatus('読み込み中...', false);
   let sheets;
@@ -1305,8 +1301,8 @@ async function renderCurrentView() {
   // 分析：全般（1係のみ）／架電分析／商談分析
   renderAnalysisPanels(isTeam, own, analysis);
 
-  // 過去実績：1係全体のみ。期ごとの通しレポート（現状は12期のみ）
-  if (isTeam) renderPastResults(document.getElementById('panel-pastresults'), parseSheet(sheets[SHEET_PAST_RESULTS] || []));
+  // 過去実績：1係全体は全員分、メンバー選択時は本人の行だけに絞って表示
+  renderPastResults(document.getElementById('panel-pastresults'), parseSheet(sheets[SHEET_PAST_RESULTS] || []), selectedMember);
 
   applyTabVisibility(isTeam);
   PANEL_IDS.forEach(id => reveal(document.getElementById('panel-' + id)));
@@ -2357,8 +2353,9 @@ function appendMaybeCollapsible(root, rows) {
   root.appendChild(det);
 }
 
-// ── 過去実績タブ（期ごとの通しレポート。現状は12期のみ・将来13期が並ぶ枠を用意） ──
-function renderPastResults(root, parsed) {
+// ── 過去実績タブ（12期を1Q〜4Qに分け、メンバー別実績表がメイン。現状は12期のみ・将来13期の枠を用意） ──
+let pastResultsQuarter = null; // nullなら「進行中 or 直近確定」の四半期を自動選択
+function renderPastResults(root, parsed, selectedMember) {
   root.innerHTML = '';
   if (parsed.title) addTitle(root, parsed.title);
 
@@ -2369,12 +2366,46 @@ function renderPastResults(root, parsed) {
     <button class="term-btn future" disabled>13期（未開始）</button>`;
   root.appendChild(termBar);
 
-  parsed.sections.forEach(sec => {
-    const t = sec.title;
-    if (t.startsWith("■①'")) return renderFunnel(root, sec); // 歩留まり：ダッシュボードの■②と同じ形なのでそのまま流用
-    if (t.startsWith('■①')) return renderPastTiles(root, sec);
-    if (t.startsWith('■②') || t.startsWith('■③')) return renderPastTrendChart(root, sec);
+  const tileSec = parsed.sections.find(s => s.title.startsWith('■①'));
+  if (tileSec) renderPastTiles(root, tileSec);
+
+  const quarterSecs = parsed.sections
+    .map(s => { const m = s.title.match(/^■③-(\d)Q/); return m ? { sec: s, q: Number(m[1]) } : null; })
+    .filter(Boolean);
+  if (!quarterSecs.length) return;
+
+  // セグ（L3相当）：1Q/2Q/3Q/4Qの切替。進行中or直近確定の四半期をデフォルト選択
+  if (pastResultsQuarter == null || !quarterSecs.some(q => q.q === pastResultsQuarter)) {
+    const inProgress = quarterSecs.find(q => q.sec.title.includes('進行中'));
+    pastResultsQuarter = (inProgress || quarterSecs[quarterSecs.length - 1]).q;
+  }
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  quarterSecs.forEach(({ sec, q }) => {
+    const btn = document.createElement('button');
+    btn.className = 'seg-btn' + (q === pastResultsQuarter ? ' active' : '');
+    btn.textContent = `${q}Q`;
+    btn.dataset.q = q;
+    btn.addEventListener('click', () => { pastResultsQuarter = q; renderPastResults(root, parsed, selectedMember); });
+    seg.appendChild(btn);
   });
+  root.appendChild(seg);
+
+  const activeSec = quarterSecs.find(q => q.q === pastResultsQuarter).sec;
+  renderPastMemberTable(root, activeSec, selectedMember);
+}
+
+// ■③-*Q メンバー別：列数が多いので横スクロール表。メンバー選択時は本人の行だけに絞る
+function renderPastMemberTable(root, sec, selectedMember) {
+  addTitle(root, sec.title);
+  let rows = dataRowsOf(sec);
+  if (rows.length <= 1) { root.appendChild(buildTable(rows)); return; }
+  if (selectedMember) {
+    const header = rows[0];
+    const mine = rows.slice(1).filter(r => r[0] === selectedMember);
+    rows = mine.length ? [header, ...mine] : rows;
+  }
+  root.appendChild(buildTable(rows));
 }
 
 function renderPastTiles(root, sec) {
@@ -2398,17 +2429,6 @@ function renderPastTiles(root, sec) {
     grid.appendChild(tile);
   });
   root.appendChild(grid);
-}
-
-// ■②（四半期推移）／■③（メンバー別）共通：グラフ＋表。系列数は可変
-function renderPastTrendChart(root, sec) {
-  addTitle(root, sec.title);
-  const rows = dataRowsOf(sec);
-  if (rows.length < 2) return;
-  const header = rows[0];
-  const chartRows = rows.slice(1).map(r => [r[0], ...header.slice(1).map((_, i) => Number(r[i + 1]) || 0)]);
-  root.appendChild(buildGroupedBarChart(header, chartRows));
-  root.appendChild(buildTable(rows));
 }
 
 function renderGenericTable(root, sec) {
