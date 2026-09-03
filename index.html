@@ -1061,6 +1061,9 @@ window.addEventListener('load', () => {
     client_id: CLIENT_ID,
     scope: SCOPE,
     callback: handleTokenResponse,
+    // サードパーティCookieがブロックされていても裏側の自動更新（prompt:''）が通るように、
+    // FedCM経由でのサイレント認証を使う（毎回アカウント選択画面が出てしまう問題の対策）
+    use_fedcm_for_prompt: true,
     error_callback: (err) => {
       if (hasCompletedSignIn) {
         // 裏側での自動更新に失敗＝Google側のセッションが切れている。ログイン画面に戻す
