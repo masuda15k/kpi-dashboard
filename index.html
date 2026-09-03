@@ -552,6 +552,22 @@
   .term-btn.active { background: var(--accent); border-color: var(--accent); color: #0a0d16; }
   .term-btn.future { opacity: .35; }
 
+  /* ── 過去実績：メンバー別実績表（評価項目の強調＋項目ごとの表示トグル） ── */
+  .past-kpi { color: var(--accent); font-weight: 800; background: var(--accent-tint); }
+  tr.header-row td.past-kpi { color: var(--accent-dark); }
+  .past-rate { color: var(--muted); font-weight: 500; font-size: 11.5px; margin-left: 5px; }
+  td.past-kpi .past-rate { color: var(--accent-dark); }
+  .past-rate-stack { display: block; margin-left: 0; margin-top: 2px; }
+  .past-col-toggles { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .past-col-toggles .label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-2); align-self: center; margin-right: 4px; }
+  .past-col-chip {
+    background: var(--card-2); border: 1px solid var(--border); color: var(--muted);
+    font-size: 12px; font-weight: 600; padding: 5px 13px; border-radius: 999px; cursor: pointer;
+  }
+  .past-col-chip:hover { color: var(--text); border-color: var(--accent); }
+  .past-col-chip.active { color: var(--accent-dark); background: var(--accent-tint); border-color: var(--accent); }
+  [data-past-col] { display: none; }
+
   /* ── メンバーカード ── */
   /* ── 同格を水平線で揃える：識学の組織図の作法をそのまま借りる。全員が同じ基準線の上に立つ ── */
   .rank-strip {
@@ -2356,8 +2372,8 @@ function appendMaybeCollapsible(root, rows) {
   root.appendChild(det);
 }
 
-// ── 過去実績タブ（12期を1Q〜4Qに分け、メンバー別実績表がメイン。現状は12期のみ・将来13期の枠を用意） ──
-let pastResultsQuarter = null; // nullなら「進行中 or 直近確定」の四半期を自動選択
+// ── 過去実績タブ：12期の1Q〜4Qを1ページに並べて四半期間の比較をしやすくする。
+//    上位切替は期（12期＝今期／11期＝前期、現状11期のデータは無し） ──
 function renderPastResults(root, parsed, selectedMember) {
   root.innerHTML = '';
   if (parsed.title) addTitle(root, parsed.title);
@@ -2366,7 +2382,7 @@ function renderPastResults(root, parsed, selectedMember) {
   termBar.className = 'term-bar';
   termBar.innerHTML = `<span class="term-bar-label">期</span>
     <button class="term-btn active" disabled>12期</button>
-    <button class="term-btn future" disabled>13期（未開始）</button>`;
+    <button class="term-btn future" disabled>11期（データなし）</button>`;
   root.appendChild(termBar);
 
   const tileSec = parsed.sections.find(s => s.title.startsWith('■①'));
@@ -2374,31 +2390,32 @@ function renderPastResults(root, parsed, selectedMember) {
 
   const quarterSecs = parsed.sections
     .map(s => { const m = s.title.match(/^■③-(\d)Q/); return m ? { sec: s, q: Number(m[1]) } : null; })
-    .filter(Boolean);
-  if (!quarterSecs.length) return;
-
-  // セグ（L3相当）：1Q/2Q/3Q/4Qの切替。進行中or直近確定の四半期をデフォルト選択
-  if (pastResultsQuarter == null || !quarterSecs.some(q => q.q === pastResultsQuarter)) {
-    const inProgress = quarterSecs.find(q => q.sec.title.includes('進行中'));
-    pastResultsQuarter = (inProgress || quarterSecs[quarterSecs.length - 1]).q;
-  }
-  const seg = document.createElement('div');
-  seg.className = 'seg';
-  quarterSecs.forEach(({ sec, q }) => {
-    const btn = document.createElement('button');
-    btn.className = 'seg-btn' + (q === pastResultsQuarter ? ' active' : '');
-    btn.textContent = `${q}Q`;
-    btn.dataset.q = q;
-    btn.addEventListener('click', () => { pastResultsQuarter = q; renderPastResults(root, parsed, selectedMember); });
-    seg.appendChild(btn);
-  });
-  root.appendChild(seg);
-
-  const activeSec = quarterSecs.find(q => q.q === pastResultsQuarter).sec;
-  renderPastMemberTable(root, activeSec, selectedMember);
+    .filter(Boolean)
+    .sort((a, b) => a.q - b.q);
+  quarterSecs.forEach(({ sec }) => renderPastMemberTable(root, sec, selectedMember));
 }
 
-// ■③-*Q メンバー別：行＝1係計/増田/菅原/丸野/江波戸/飯山、列＝アプローチ数〜新規成約数の表。
+// ヘッダー名→表示用の列定義。type: 'kpi'（評価項目・常時表示・強調）／'toggle-<key>'（項目チップで開閉）／null（常時表示・無強調）
+// rateOf: 同じ行の中で対になる率列のヘッダー名（1つ or 複数＝起因/受領のように併記）
+const PAST_COL_DEFS = [
+  { count: 'アプローチ数', toggle: 'approach' },
+  { count: '本人接続数', rate: ['本人接続率'], toggle: 'honnin' },
+  { count: '有効会話数', rate: ['有効会話率'], toggle: 'yukou' },
+  { count: '商談設定数', rate: ['商談設定率'], toggle: 'apo' },
+  { count: '商談実施数', rate: ['実施率(起因)', '実施率(受領)'], rateLabels: ['起因', '受領'], kpi: true },
+  { count: 'コンサル部提案提供数', rate: ['提案獲得率'], kpi: true },
+  { count: 'P3', rate: ['P3率'], toggle: 'p3' },
+  { count: 'P4', rate: ['P4率'], toggle: 'p4' },
+  { count: 'P5', rate: ['P5率'], toggle: 'p5' },
+  { count: '新規成約数', rate: ['成約率'], kpi: true },
+];
+const PAST_TOGGLE_ORDER = [
+  ['approach', 'アプローチ数'], ['honnin', '本人接続数'], ['yukou', '有効会話数'], ['apo', '商談設定数'],
+  ['p3', 'P3'], ['p4', 'P4'], ['p5', 'P5'],
+];
+
+// ■③-*Q メンバー別：行＝1係計/増田/菅原/丸野/江波戸/飯山。評価項目（商談実施数・コンサル部提案提供数・
+// 新規成約数）は常時強調表示、それ以外は項目ごとのチップでON/OFF。率は件数の横に小数点1桁で併記。
 // メンバー選択時は本人の行だけに絞る
 function renderPastMemberTable(root, sec, selectedMember) {
   addTitle(root, sec.title);
@@ -2410,7 +2427,84 @@ function renderPastMemberTable(root, sec, selectedMember) {
     const mine = dataRows.filter(r => r[0] === selectedMember);
     if (mine.length) dataRows = mine;
   }
-  root.appendChild(buildTable([header, ...dataRows]));
+  if (!dataRows.length) { root.appendChild(buildTable(rows)); return; }
+
+  const col = name => header.indexOf(name);
+  const tableId = 'pastTbl' + Math.random().toString(36).slice(2, 8);
+
+  const toggles = document.createElement('div');
+  toggles.className = 'past-col-toggles';
+  const label = document.createElement('span');
+  label.className = 'label';
+  label.textContent = '項目を追加表示';
+  toggles.appendChild(label);
+  PAST_TOGGLE_ORDER.forEach(([key, text]) => {
+    const chip = document.createElement('button');
+    chip.className = 'past-col-chip';
+    chip.type = 'button';
+    chip.textContent = text;
+    chip.addEventListener('click', () => {
+      const on = chip.classList.toggle('active');
+      table.querySelectorAll(`[data-past-col="${key}"]`).forEach(cell => { cell.style.display = on ? 'table-cell' : 'none'; });
+    });
+    toggles.appendChild(chip);
+  });
+  root.appendChild(toggles);
+
+  const scroll = document.createElement('div');
+  scroll.className = 'table-scroll';
+  const table = document.createElement('table');
+  table.id = tableId;
+
+  const buildCell = (r, def) => {
+    const td = document.createElement('td');
+    if (def.toggle) td.dataset.pastCol = def.toggle;
+    if (def.kpi) td.className = 'past-kpi';
+    const ci = col(def.count);
+    let text = ci >= 0 ? fmtCell(r[ci]) : '';
+    td.textContent = text;
+    if (def.rate) {
+      const parts = def.rate.map((rn, i) => {
+        const ri = col(rn);
+        const v = ri >= 0 ? r[ri] : null;
+        return def.rateLabels ? `${def.rateLabels[i]}${v}` : v;
+      }).filter(Boolean);
+      if (parts.length) {
+        const span = document.createElement('span');
+        span.className = 'past-rate' + (def.rate.length > 1 ? ' past-rate-stack' : '');
+        span.textContent = `(${parts.join(' / ')})`;
+        td.appendChild(span);
+      }
+    }
+    return td;
+  };
+
+  const headTr = document.createElement('tr');
+  headTr.className = 'header-row';
+  const nameHead = document.createElement('td');
+  nameHead.textContent = '行/列';
+  headTr.appendChild(nameHead);
+  PAST_COL_DEFS.forEach(def => {
+    const td = document.createElement('td');
+    td.textContent = def.count;
+    if (def.toggle) td.dataset.pastCol = def.toggle;
+    if (def.kpi) td.className = 'past-kpi';
+    headTr.appendChild(td);
+  });
+  table.appendChild(headTr);
+
+  dataRows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.className = r[0] === '1係' ? 'team-row' : 'member-row';
+    const nameTd = document.createElement('td');
+    nameTd.textContent = r[0];
+    tr.appendChild(nameTd);
+    PAST_COL_DEFS.forEach(def => tr.appendChild(buildCell(r, def)));
+    table.appendChild(tr);
+  });
+
+  scroll.appendChild(table);
+  root.appendChild(scroll);
 }
 
 function renderPastTiles(root, sec) {
