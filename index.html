@@ -812,6 +812,15 @@
   }
   .seg-btn:hover { color: var(--text); }
   .seg-btn.active { color: var(--text); background: rgba(255,255,255,.1); }
+  /* 結果の完了タブ内（日報/週報/月報）の切替。既存の.seg-btnと見た目は同じだが、
+     グローバルなactivateSub()と衝突しないよう別クラス・別状態変数で扱う */
+  .kseg-btn {
+    background: none; border: none; color: var(--muted); font-size: 12px; font-weight: 600;
+    font-family: inherit; padding: 5px 13px; border-radius: 6px; cursor: pointer;
+    transition: color .15s, background .15s;
+  }
+  .kseg-btn:hover { color: var(--text); }
+  .kseg-btn.active { color: var(--text); background: rgba(255,255,255,.1); }
   .sub-panel { display: none; }
   .sub-panel.active { display: block; }
 
@@ -950,17 +959,23 @@
   <!-- L2：何を見るか -->
   <nav class="tabnav" id="tabNav" style="display:none;">
     <button class="tab-btn active" data-tab="dashboard">ダッシュボード</button>
-    <button class="tab-btn" data-tab="daily">日報</button>
-    <button class="tab-btn" data-tab="weekly">週報</button>
-    <button class="tab-btn" data-tab="monthly" id="tabBtnMonthly">月報</button>
+    <button class="tab-btn" data-tab="kekka">結果の完了</button>
     <button class="tab-btn" data-tab="analysis">分析</button>
     <button class="tab-btn" data-tab="pastresults" id="tabBtnPastResults">過去実績</button>
   </nav>
 
   <div id="panel-dashboard" class="tab-panel active"></div>
-  <div id="panel-daily" class="tab-panel"></div>
-  <div id="panel-weekly" class="tab-panel"></div>
-  <div id="panel-monthly" class="tab-panel"></div>
+  <div id="panel-kekka" class="tab-panel">
+    <!-- L3：結果の完了タブの中だけの切替（日報/週報/月報） -->
+    <div class="seg kseg" id="kekkaSeg">
+      <button class="kseg-btn active" data-ksub="daily">日報</button>
+      <button class="kseg-btn" data-ksub="weekly">週報</button>
+      <button class="kseg-btn" data-ksub="monthly" id="ksegBtnMonthly">月報</button>
+    </div>
+    <div id="ksub-daily" class="sub-panel active"></div>
+    <div id="ksub-weekly" class="sub-panel"></div>
+    <div id="ksub-monthly" class="sub-panel"></div>
+  </div>
   <div id="panel-pastresults" class="tab-panel"></div>
   <div id="panel-analysis" class="tab-panel">
     <!-- L3：分析タブの中だけの切替 -->
@@ -1066,6 +1081,7 @@ let refreshTimer = null;
 let selectedMember = null;     // null＝1係全体。それ以外はメンバー名（＝スプシのタブ名）
 let activeTab = 'dashboard';   // L2
 let activeSub = 'general';     // L3（分析タブ内）
+let activeKSub = 'daily';      // L3（結果の完了タブ内：日報/週報/月報）
 const sheetCache = {};         // タブ名 → 行配列。一度読んだタブは再取得しない
 
 // いま表示している対象のスプシタブ名。1係全体のときは入力先＝「報告」
@@ -1211,17 +1227,28 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function activateSub(name) {
   activeSub = name;
   document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.sub === name));
-  document.querySelectorAll('.sub-panel').forEach(p => p.classList.toggle('active', p.id === 'sub-' + name));
+  // 「結果の完了」タブのksub-*パネルは別状態（activeKSub）で管理するため、ここでは触らない
+  document.querySelectorAll('.sub-panel').forEach(p => { if (!p.id.startsWith('ksub-')) p.classList.toggle('active', p.id === 'sub-' + name); });
 }
 document.querySelectorAll('.seg-btn').forEach(btn => {
   btn.addEventListener('click', () => activateSub(btn.dataset.sub));
 });
 
+// ── L3：結果の完了タブの中（日報／週報／月報）── analyzeSubとは独立した状態・要素で扱う
+function activateKSub(name) {
+  activeKSub = name;
+  document.querySelectorAll('.kseg-btn').forEach(b => b.classList.toggle('active', b.dataset.ksub === name));
+  document.querySelectorAll('.sub-panel').forEach(p => { if (p.id.startsWith('ksub-')) p.classList.toggle('active', p.id === 'ksub-' + name); });
+}
+document.querySelectorAll('.kseg-btn').forEach(btn => {
+  btn.addEventListener('click', () => activateKSub(btn.dataset.ksub));
+});
+
 // 対象によって出せないタブを隠す。隠したタブを開いていたら安全な場所へ寄せる
 function applyTabVisibility(isTeam) {
   // 月報はメンバー個人タブに転記ブロックが無いため1係全体のときだけ
-  document.getElementById('tabBtnMonthly').style.display = isTeam ? 'inline-block' : 'none';
-  if (!isTeam && activeTab === 'monthly') activateTab('dashboard');
+  document.getElementById('ksegBtnMonthly').style.display = isTeam ? 'inline-block' : 'none';
+  if (!isTeam && activeKSub === 'monthly') activateKSub('daily');
 
   // 分析の「全般」（セグメント別転換率・失注理由・滞留・データ品質）は1係全体のみ
   document.getElementById('segBtnGeneral').style.display = isTeam ? 'inline-block' : 'none';
@@ -1293,8 +1320,9 @@ function inputValuesFrom(parsed) {
 }
 
 // ── 画面全体の再描画 ────────────────────────────────
-const PANEL_IDS = ['dashboard', 'daily', 'weekly', 'monthly', 'pastresults'];
+const PANEL_IDS = ['dashboard', 'kekka', 'pastresults'];
 const SUB_IDS = ['general', 'katsudo', 'shodan'];
+const KSUB_IDS = ['daily', 'weekly', 'monthly'];
 
 async function renderCurrentView() {
   const isTeam = !selectedMember;
@@ -1312,17 +1340,14 @@ async function renderCurrentView() {
 
   PANEL_IDS.forEach(id => { document.getElementById('panel-' + id).innerHTML = ''; });
   SUB_IDS.forEach(id => { document.getElementById('sub-' + id).innerHTML = ''; });
+  KSUB_IDS.forEach(id => { document.getElementById('ksub-' + id).innerHTML = ''; });
 
   const own = parseSheet(sheets[sheet] || []);
   const analysis = parseSheet(sheets[SHEET_ANALYSIS] || []);
 
-  // ダッシュボード：1係全体は「ダッシュボード」タブ、メンバーは本人タブの■1〜■5
-  const dashRoot = document.getElementById('panel-dashboard');
-  const dashSrc = isTeam ? parseSheet(sheets[SHEET_DASHBOARD] || []) : own;
-  renderHero(dashRoot, dashSrc);
-  dashSrc.sections.filter(s => isDashboardSection(s.title)).forEach(sec => renderSection(dashRoot, sec));
+  // ダッシュボードはいったん空にしている（作り直し予定）。あえて何も描画しない
 
-  // 日報・週報・月報：入力欄＋スプシ側で生成済みの報告文
+  // 結果の完了（日報・週報・月報を1タブにまとめ、内部でL3切替）：入力欄＋スプシ側で生成済みの報告文
   renderReportPanel('daily', sheet, own);
   renderReportPanel('weekly', sheet, own);
   renderReportPanel('monthly', sheet, own);
@@ -1336,6 +1361,7 @@ async function renderCurrentView() {
   applyTabVisibility(isTeam);
   PANEL_IDS.forEach(id => reveal(document.getElementById('panel-' + id)));
   SUB_IDS.forEach(id => reveal(document.getElementById('sub-' + id)));
+  KSUB_IDS.forEach(id => reveal(document.getElementById('ksub-' + id)));
   hideStatus();
 }
 
@@ -1376,7 +1402,7 @@ function isDashboardSection(title) {
 const REPORT_LABEL = { daily: '日報', weekly: '週報', monthly: '月報' };
 
 function renderReportPanel(group, sheet, parsed) {
-  const root = document.getElementById('panel-' + group);
+  const root = document.getElementById('ksub-' + group);
   const grp = inputGroupFor(sheet, group);
   const values = inputValuesFrom(parsed);
   const editable = canEditCurrent();
@@ -1473,6 +1499,7 @@ async function saveInputGroup(grp, inputs, saveBtn, msg) {
     delete sheetCache[currentSheet()];
     await renderCurrentView();
     activateTab(activeTab); // 再描画でパネルが差し替わるので、開いていたタブを開き直す
+    activateKSub(activeKSub); // 「結果の完了」タブ内のL3（日報/週報/月報）も同様に開き直す
   } catch (e) {
     msg.textContent = '保存に失敗しました（入力内容は消えていません）：' + e.message;
     msg.className = 'save-msg error';
