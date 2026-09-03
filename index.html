@@ -562,8 +562,8 @@
   .past-clickable:hover { text-decoration: underline dotted var(--muted); }
   .past-click-detail { color: var(--accent); }
   .past-achieve {
-    display: block; margin-top: 3px; font-size: 11px; font-weight: 700;
-    padding: 1px 7px; border-radius: 999px; background: var(--track); color: var(--muted);
+    display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 700;
+    padding: 1px 7px; border-radius: 999px; background: var(--track); color: var(--muted); cursor: default;
   }
   .past-achieve.good { background: var(--good-tint); color: var(--good); }
   .past-achieve.warning { background: var(--warning-tint); color: var(--warning); }
@@ -2484,11 +2484,12 @@ function renderPastMemberTable(root, sec, selectedMember) {
         const pctNum = parseFloat(String(av).replace('%', ''));
         const tone = isFinite(pctNum) ? (pctNum >= 100 ? 'good' : pctNum >= 70 ? 'warning' : 'critical') : null;
         badge.className = 'past-achieve' + (tone ? ' ' + tone : '');
-        badge.textContent = `目標${tv} (${av})`;
+        badge.textContent = av;
+        badge.title = `目標 ${tv}`;
         td.appendChild(badge);
       }
     }
-    if (def.sub) {
+    if (def.sub && !def.clickDetail) {
       // 商談実施数：起因/受領それぞれの件数＋率を件数の下に併記（例：起因22件(100.0%) / 受領46件(86.8%)）
       const parts = def.sub.map(s => {
         const cv = col(s.count) >= 0 ? r[col(s.count)] : null;
@@ -2512,16 +2513,30 @@ function renderPastMemberTable(root, sec, selectedMember) {
         td.appendChild(span);
       }
     }
-    // クリックで内訳（社長勉強会経由など）を表示・非表示
-    if (def.clickDetail) {
-      const di = col(def.clickDetail);
-      const dv = di >= 0 ? r[di] : null;
-      if (dv != null && dv !== '－') {
+    // クリックで内訳（社長勉強会経由・起因/受領の内訳など）をまとめて表示・非表示。
+    // 評価項目セルは既にカウント＋達成率バッジで情報量が多いため、細かい内訳は既定で畳んでおく
+    if (def.clickDetail || def.sub) {
+      const lines = [];
+      if (def.clickDetail) {
+        const di = col(def.clickDetail);
+        const dv = di >= 0 ? r[di] : null;
+        if (dv != null && dv !== '－') lines.push(`${def.clickDetail}: ${dv}件`);
+      }
+      if (def.sub) {
+        const parts = def.sub.map(s => {
+          const cv = col(s.count) >= 0 ? r[col(s.count)] : null;
+          const rv = col(s.rate) >= 0 ? r[col(s.rate)] : null;
+          if (cv == null) return null;
+          return `${s.label}${cv}件(${rv})`;
+        }).filter(Boolean);
+        if (parts.length) lines.push(parts.join(' / '));
+      }
+      if (lines.length) {
         td.classList.add('past-clickable');
         const detail = document.createElement('span');
         detail.className = 'past-rate past-rate-stack past-click-detail';
         detail.hidden = true;
-        detail.textContent = `${def.clickDetail}: ${dv}件`;
+        detail.textContent = lines.join(' ／ ');
         td.appendChild(detail);
         td.addEventListener('click', () => { detail.hidden = !detail.hidden; });
       }
