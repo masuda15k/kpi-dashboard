@@ -2389,25 +2389,28 @@ function renderPastResults(root, parsed, selectedMember) {
   if (tileSec) renderPastTiles(root, tileSec);
 
   const quarterSecs = parsed.sections
-    .map(s => { const m = s.title.match(/^■③-(\d)Q/); return m ? { sec: s, q: Number(m[1]) } : null; })
+    .map(s => { const m = s.title.match(/^■(\d)Q/); return m ? { sec: s, q: Number(m[1]) } : null; })
     .filter(Boolean)
     .sort((a, b) => a.q - b.q);
   quarterSecs.forEach(({ sec }) => renderPastMemberTable(root, sec, selectedMember));
 }
 
-// ヘッダー名→表示用の列定義。type: 'kpi'（評価項目・常時表示・強調）／'toggle-<key>'（項目チップで開閉）／null（常時表示・無強調）
-// rateOf: 同じ行の中で対になる率列のヘッダー名（1つ or 複数＝起因/受領のように併記）
+// ヘッダー名→表示用の列定義。kpi=評価項目（常時表示・強調）／toggle=項目チップで開閉／どちらも無し=常時表示・無強調
+// rate=同じ行の中の率列のヘッダー名（1個）。sub=商談実施数のように件数＋率の組を複数併記する場合に使う
 const PAST_COL_DEFS = [
   { count: 'アプローチ数', toggle: 'approach' },
-  { count: '本人接続数', rate: ['本人接続率'], toggle: 'honnin' },
-  { count: '有効会話数', rate: ['有効会話率'], toggle: 'yukou' },
-  { count: '商談設定数', rate: ['商談設定率'], toggle: 'apo' },
-  { count: '商談実施数', rate: ['実施率(起因)', '実施率(受領)'], rateLabels: ['起因', '受領'], kpi: true },
-  { count: 'コンサル部提案提供数', rate: ['提案獲得率'], kpi: true },
-  { count: 'P3', rate: ['P3率'], toggle: 'p3' },
-  { count: 'P4', rate: ['P4率'], toggle: 'p4' },
-  { count: 'P5', rate: ['P5率'], toggle: 'p5' },
-  { count: '新規成約数', rate: ['成約率'], kpi: true },
+  { count: '本人接続数', rate: '本人接続率', toggle: 'honnin' },
+  { count: '有効会話数', rate: '有効会話率', toggle: 'yukou' },
+  { count: '商談設定数', rate: '商談設定率', toggle: 'apo' },
+  { count: '商談実施数', kpi: true, sub: [
+    { label: '起因', count: '実施数(起因)', rate: '実施率(起因)' },
+    { label: '受領', count: '実施数(受領)', rate: '実施率(受領)' },
+  ] },
+  { count: 'コンサル部提案提供数', rate: '提案獲得率', kpi: true },
+  { count: 'P3', rate: 'P3率', toggle: 'p3' },
+  { count: 'P4', rate: 'P4率', toggle: 'p4' },
+  { count: 'P5', rate: 'P5率', toggle: 'p5' },
+  { count: '新規成約数', rate: '成約率', kpi: true },
 ];
 const PAST_TOGGLE_ORDER = [
   ['approach', 'アプローチ数'], ['honnin', '本人接続数'], ['yukou', '有効会話数'], ['apo', '商談設定数'],
@@ -2463,16 +2466,27 @@ function renderPastMemberTable(root, sec, selectedMember) {
     const ci = col(def.count);
     let text = ci >= 0 ? fmtCell(r[ci]) : '';
     td.textContent = text;
-    if (def.rate) {
-      const parts = def.rate.map((rn, i) => {
-        const ri = col(rn);
-        const v = ri >= 0 ? r[ri] : null;
-        return def.rateLabels ? `${def.rateLabels[i]}${v}` : v;
+    if (def.sub) {
+      // 商談実施数：起因/受領それぞれの件数＋率を件数の下に併記（例：起因22件(100.0%) / 受領46件(86.8%)）
+      const parts = def.sub.map(s => {
+        const cv = col(s.count) >= 0 ? r[col(s.count)] : null;
+        const rv = col(s.rate) >= 0 ? r[col(s.rate)] : null;
+        if (cv == null) return null;
+        return `${s.label}${cv}件(${rv})`;
       }).filter(Boolean);
       if (parts.length) {
         const span = document.createElement('span');
-        span.className = 'past-rate' + (def.rate.length > 1 ? ' past-rate-stack' : '');
+        span.className = 'past-rate past-rate-stack';
         span.textContent = `(${parts.join(' / ')})`;
+        td.appendChild(span);
+      }
+    } else if (def.rate) {
+      const ri = col(def.rate);
+      const v = ri >= 0 ? r[ri] : null;
+      if (v != null) {
+        const span = document.createElement('span');
+        span.className = 'past-rate';
+        span.textContent = `(${v})`;
         td.appendChild(span);
       }
     }
