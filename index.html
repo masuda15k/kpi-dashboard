@@ -558,6 +558,9 @@
   .past-rate { color: var(--muted); font-weight: 500; font-size: 11.5px; margin-left: 5px; }
   td.past-kpi .past-rate { color: var(--accent-dark); }
   .past-rate-stack { display: block; margin-left: 0; margin-top: 2px; }
+  .past-clickable { cursor: pointer; }
+  .past-clickable:hover { text-decoration: underline dotted var(--muted); }
+  .past-click-detail { color: var(--accent); }
   .past-col-toggles { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
   .past-col-toggles .label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-2); align-self: center; margin-right: 4px; }
   .past-col-chip {
@@ -2402,7 +2405,7 @@ const PAST_COL_DEFS = [
   { count: '本人接続数', rate: '本人接続率', toggle: 'honnin' },
   { count: '有効会話数', rate: '有効会話率', toggle: 'yukou' },
   { count: '商談設定数', rate: '商談設定率', toggle: 'apo' },
-  { count: '商談実施数', kpi: true, sub: [
+  { count: '商談実施数', kpi: true, clickDetail: '社長勉強会経由', sub: [
     { label: '起因', count: '実施数(起因)', rate: '実施率(起因)' },
     { label: '受領', count: '実施数(受領)', rate: '実施率(受領)' },
   ] },
@@ -2488,6 +2491,20 @@ function renderPastMemberTable(root, sec, selectedMember) {
         span.className = 'past-rate';
         span.textContent = `(${v})`;
         td.appendChild(span);
+      }
+    }
+    // クリックで内訳（社長勉強会経由など）を表示・非表示
+    if (def.clickDetail) {
+      const di = col(def.clickDetail);
+      const dv = di >= 0 ? r[di] : null;
+      if (dv != null && dv !== '－') {
+        td.classList.add('past-clickable');
+        const detail = document.createElement('span');
+        detail.className = 'past-rate past-rate-stack past-click-detail';
+        detail.hidden = true;
+        detail.textContent = `${def.clickDetail}: ${dv}件`;
+        td.appendChild(detail);
+        td.addEventListener('click', () => { detail.hidden = !detail.hidden; });
       }
     }
     return td;
