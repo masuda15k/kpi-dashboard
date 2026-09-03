@@ -2395,14 +2395,8 @@ function renderPastResults(root, parsed, selectedMember) {
   renderPastMemberTable(root, activeSec, selectedMember);
 }
 
-// 達成率(%)の数値から色調を決める（toneOfは🔴🟡🟢絵文字前提で、このシートの値には付いていないため専用に用意）
-function toneFromPct(v) {
-  const n = pct(v);
-  if (n == null) return 'good';
-  return n >= 100 ? 'good' : n >= 70 ? 'warning' : 'critical';
-}
-
-// ■③-*Q メンバー別：列が多く表だと見づらいため、1人1カードにまとめて見せる。メンバー選択時は本人のカードだけ
+// ■③-*Q メンバー別：行＝1係計/増田/菅原/丸野/江波戸/飯山、列＝アプローチ数〜新規成約数の表。
+// メンバー選択時は本人の行だけに絞る
 function renderPastMemberTable(root, sec, selectedMember) {
   addTitle(root, sec.title);
   const rows = dataRowsOf(sec);
@@ -2413,61 +2407,7 @@ function renderPastMemberTable(root, sec, selectedMember) {
     const mine = dataRows.filter(r => r[0] === selectedMember);
     if (mine.length) dataRows = mine;
   }
-  if (!dataRows.length) { root.appendChild(buildTable(rows)); return; }
-
-  const col = name => header.indexOf(name);
-  const idx = {
-    shR: col('商談実施結果'), shT: col('商談実施目標'), shRateK: col('実施率(起因)'), shRateJ: col('実施率(受領)'), shAch: col('実施達成率'),
-    p2R: col('P2結果'), p2T: col('P2目標'), p2Conv: col('提案獲得率'), p2Ach: col('P2達成率'),
-    p3R: col('P3結果'), p3Rate: col('P3移行率'), p4R: col('P4結果'), p4Rate: col('P4移行率'), p5R: col('P5結果'), p5Rate: col('P5移行率'),
-    clR: col('成約結果'), clRate: col('成約率'), clT: col('成約目標'),
-  };
-
-  const grid = document.createElement('div');
-  grid.className = 'member-grid';
-  dataRows.forEach(r => {
-    const card = document.createElement('div');
-    card.className = 'member-card';
-
-    const achTone = toneFromPct(r[idx.shAch]);
-    const head = document.createElement('div');
-    head.className = 'member-head';
-    const avatar = document.createElement('div');
-    avatar.className = 'member-avatar';
-    avatar.textContent = String(r[0]).charAt(0);
-    avatar.style.background = toneColor(achTone);
-    const name = document.createElement('div');
-    name.className = 'member-name';
-    name.textContent = r[0];
-    const pace = document.createElement('span');
-    pace.className = 'member-pace ' + achTone;
-    pace.textContent = `商談実施 ${r[idx.shAch]}`;
-    head.append(avatar, name, pace);
-    card.appendChild(head);
-
-    const addLine = (label, valueText, ratioPct, tone) => {
-      const line = document.createElement('div');
-      line.className = 'metric-line';
-      const row = document.createElement('div');
-      row.className = 'row';
-      const l = document.createElement('span'); l.textContent = label;
-      const v = document.createElement('b'); v.textContent = valueText;
-      row.append(l, v);
-      line.appendChild(row);
-      if (ratioPct != null) line.appendChild(makeBar(Math.max(0, Math.min(100, ratioPct)), toneColor(tone)));
-      card.appendChild(line);
-    };
-
-    addLine('商談実施（結果/目標）', `${r[idx.shR]} / ${r[idx.shT]}`, pct(r[idx.shAch]), achTone);
-    addLine('実施率（起因 / 受領）', `${r[idx.shRateK]} / ${r[idx.shRateJ]}`);
-    const p2Tone = toneFromPct(r[idx.p2Ach]);
-    addLine('P2コンサル部提供（結果/目標）', `${r[idx.p2R]} / ${r[idx.p2T]}（提案獲得率 ${r[idx.p2Conv]}）`, pct(r[idx.p2Ach]), p2Tone);
-    addLine('P3 → P4 → P5', `${r[idx.p3R]}件(${r[idx.p3Rate]}) → ${r[idx.p4R]}件(${r[idx.p4Rate]}) → ${r[idx.p5R]}件(${r[idx.p5Rate]})`);
-    addLine('成約（結果/目標）', `${r[idx.clR]} / ${r[idx.clT]}（成約率 ${r[idx.clRate]}）`);
-
-    grid.appendChild(card);
-  });
-  root.appendChild(grid);
+  root.appendChild(buildTable([header, ...dataRows]));
 }
 
 function renderPastTiles(root, sec) {
