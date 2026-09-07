@@ -553,11 +553,16 @@
   .term-btn.future { opacity: .35; }
 
   /* ── 結果の完了タブ最上部：評価項目サマリー（新規獲得件数／P2コンサル部提案提供数／商談実施数） ── */
-  .kpi-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 32px; }
+  .kpi-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-bottom: 32px; }
   .kpi-summary-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 16px 18px; }
   .kpi-summary-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 12px; }
-  .kpi-summary-card table { font-size: 12.5px; }
-  .kpi-summary-card td { padding: 7px 10px; }
+  /* 「対営業日進捗」の行ラベルが長く、auto幅だと達成率列を圧迫してはみ出す（overflow:hiddenで欠けて見える）ため
+     列幅を固定して確保する */
+  .kpi-summary-card table { font-size: 12.5px; table-layout: fixed; }
+  .kpi-summary-card td { padding: 7px 4px; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-summary-card td:first-child { width: 34%; padding-left: 6px; }
+  .kpi-summary-card td:not(:first-child) { width: 16.5%; text-align: right; }
+  .kpi-summary-card td:last-child { text-align: center; padding-right: 6px; }
   tr.kpi-summary-q td { font-weight: 700; }
   tr.kpi-summary-pace td { background: var(--card-2); }
 
@@ -972,30 +977,33 @@
     <button class="tab-btn" data-tab="pastresults" id="tabBtnPastResults">過去実績</button>
   </nav>
 
-  <div id="panel-kekka" class="tab-panel active">
-    <!-- 評価項目（新規獲得件数／P2コンサル部提案提供数／商談実施数）の結果/目標/不足/達成率サマリー -->
-    <div id="kekkaSummary"></div>
-    <!-- L3：結果の完了タブの中だけの切替（日報/週報/月報） -->
-    <div class="seg kseg" id="kekkaSeg">
-      <button class="kseg-btn active" data-ksub="daily">日報</button>
-      <button class="kseg-btn" data-ksub="weekly">週報</button>
-      <button class="kseg-btn" data-ksub="monthly" id="ksegBtnMonthly">月報</button>
+  <!-- ログイン完了までタブの中身が下に透けて見えないよう、まとめて隠す -->
+  <div id="tabPanels" style="display:none;">
+    <div id="panel-kekka" class="tab-panel active">
+      <!-- 評価項目（新規獲得件数／P2コンサル部提案提供数／商談実施数）の結果/目標/不足/達成率サマリー -->
+      <div id="kekkaSummary"></div>
+      <!-- L3：結果の完了タブの中だけの切替（日報/週報/月報） -->
+      <div class="seg kseg" id="kekkaSeg">
+        <button class="kseg-btn active" data-ksub="daily">日報</button>
+        <button class="kseg-btn" data-ksub="weekly">週報</button>
+        <button class="kseg-btn" data-ksub="monthly" id="ksegBtnMonthly">月報</button>
+      </div>
+      <div id="ksub-daily" class="sub-panel active"></div>
+      <div id="ksub-weekly" class="sub-panel"></div>
+      <div id="ksub-monthly" class="sub-panel"></div>
     </div>
-    <div id="ksub-daily" class="sub-panel active"></div>
-    <div id="ksub-weekly" class="sub-panel"></div>
-    <div id="ksub-monthly" class="sub-panel"></div>
-  </div>
-  <div id="panel-pastresults" class="tab-panel"></div>
-  <div id="panel-analysis" class="tab-panel">
-    <!-- L3：分析タブの中だけの切替 -->
-    <div class="seg" id="analysisSeg">
-      <button class="seg-btn active" data-sub="general" id="segBtnGeneral">全般</button>
-      <button class="seg-btn" data-sub="katsudo">架電分析</button>
-      <button class="seg-btn" data-sub="shodan">商談分析</button>
+    <div id="panel-pastresults" class="tab-panel"></div>
+    <div id="panel-analysis" class="tab-panel">
+      <!-- L3：分析タブの中だけの切替 -->
+      <div class="seg" id="analysisSeg">
+        <button class="seg-btn active" data-sub="general" id="segBtnGeneral">全般</button>
+        <button class="seg-btn" data-sub="katsudo">架電分析</button>
+        <button class="seg-btn" data-sub="shodan">商談分析</button>
+      </div>
+      <div id="sub-general" class="sub-panel active"></div>
+      <div id="sub-katsudo" class="sub-panel"></div>
+      <div id="sub-shodan" class="sub-panel"></div>
     </div>
-    <div id="sub-general" class="sub-panel active"></div>
-    <div id="sub-katsudo" class="sub-panel"></div>
-    <div id="sub-shodan" class="sub-panel"></div>
   </div>
 </main>
 
@@ -1177,6 +1185,7 @@ function resetToSignedOut() {
   document.getElementById('loginGate').style.display = 'block';
   document.getElementById('memberBar').style.display = 'none';
   document.getElementById('tabNav').style.display = 'none';
+  document.getElementById('tabPanels').style.display = 'none';
   document.getElementById('userBox').style.display = 'none';
 }
 
@@ -1202,6 +1211,7 @@ async function completeSignIn() {
 
   document.getElementById('memberBar').style.display = 'flex';
   document.getElementById('tabNav').style.display = 'flex';
+  document.getElementById('tabPanels').style.display = 'block';
   await renderCurrentView();
 }
 
