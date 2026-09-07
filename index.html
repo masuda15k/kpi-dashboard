@@ -2478,7 +2478,7 @@ function buildKpiSummaryCard(block) {
 
   block.rows.forEach(r => {
     const tr = document.createElement('tr');
-    if (r[0] === '3Q') tr.className = 'kpi-summary-q';
+    if (r[0] === '3Q' || r[0] === '今週') tr.className = 'kpi-summary-q';
     if (r[0] === '対営業日進捗') tr.className = 'kpi-summary-pace';
     r.forEach((v, i) => {
       const td = document.createElement('td');
