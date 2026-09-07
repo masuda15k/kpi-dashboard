@@ -552,6 +552,15 @@
   .term-btn.active { background: var(--accent); border-color: var(--accent); color: #0a0d16; }
   .term-btn.future { opacity: .35; }
 
+  /* ── 結果の完了タブ最上部：評価項目サマリー（新規獲得件数／P2コンサル部提案提供数／商談実施数） ── */
+  .kpi-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 32px; }
+  .kpi-summary-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 16px 18px; }
+  .kpi-summary-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 12px; }
+  .kpi-summary-card table { font-size: 12.5px; }
+  .kpi-summary-card td { padding: 7px 10px; }
+  tr.kpi-summary-q td { font-weight: 700; }
+  tr.kpi-summary-pace td { background: var(--card-2); }
+
   /* ── 過去実績：メンバー別実績表（評価項目の強調＋項目ごとの表示トグル） ── */
   .past-kpi { color: var(--accent); font-weight: 800; background: var(--accent-tint); }
   tr.header-row td.past-kpi { color: var(--accent-dark); }
@@ -958,14 +967,14 @@
 
   <!-- L2：何を見るか -->
   <nav class="tabnav" id="tabNav" style="display:none;">
-    <button class="tab-btn active" data-tab="dashboard">ダッシュボード</button>
-    <button class="tab-btn" data-tab="kekka">結果の完了</button>
+    <button class="tab-btn active" data-tab="kekka">結果の完了</button>
     <button class="tab-btn" data-tab="analysis">分析</button>
     <button class="tab-btn" data-tab="pastresults" id="tabBtnPastResults">過去実績</button>
   </nav>
 
-  <div id="panel-dashboard" class="tab-panel active"></div>
-  <div id="panel-kekka" class="tab-panel">
+  <div id="panel-kekka" class="tab-panel active">
+    <!-- 評価項目（新規獲得件数／P2コンサル部提案提供数／商談実施数）の結果/目標/不足/達成率サマリー -->
+    <div id="kekkaSummary"></div>
     <!-- L3：結果の完了タブの中だけの切替（日報/週報/月報） -->
     <div class="seg kseg" id="kekkaSeg">
       <button class="kseg-btn active" data-ksub="daily">日報</button>
@@ -997,7 +1006,6 @@ const SPREADSHEET_ID = '1qHftqur_IDqjc97VnfMopSnMeQj6z5U-m5x68O1Ahkw';
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email';
 
 // 参照するスプシのタブ名。範囲を付けずタブ名だけ指定＝実データのある範囲を自動取得（列が増えても切れない）
-const SHEET_DASHBOARD = 'ダッシュボード'; // 1係全体のダッシュボード
 const SHEET_REPORT    = '報告';           // 1係全体の日報・週報・月報（増田さんの入力先）
 const SHEET_ANALYSIS  = '分析';           // 1係全体の分析（架電・商談分析を含む）
 const SHEET_PAST_RESULTS = '過去実績';    // 1係全体・期ごとの通しレポート（現状は12期のみ）
@@ -1079,7 +1087,7 @@ let refreshTimer = null;
 
 // ── 画面の状態（L1／L2／L3）──
 let selectedMember = null;     // null＝1係全体。それ以外はメンバー名（＝スプシのタブ名）
-let activeTab = 'dashboard';   // L2
+let activeTab = 'kekka';       // L2
 let activeSub = 'general';     // L3（分析タブ内）
 let activeKSub = 'daily';      // L3（結果の完了タブ内：日報/週報/月報）
 const sheetCache = {};         // タブ名 → 行配列。一度読んだタブは再取得しない
@@ -1320,17 +1328,17 @@ function inputValuesFrom(parsed) {
 }
 
 // ── 画面全体の再描画 ────────────────────────────────
-// 'kekka'（結果の完了）はここに含めない：中身はksub-*の子要素にあり、
+// 'kekka'（結果の完了）はここに含めない：中身はksub-*・kekkaSummaryの子要素にあり、
 // 親ごとinnerHTML=''で消すと子要素(ksub-daily等)ごと消えてしまい、
 // 直後のKSUB_IDSループがgetElementById(null)で例外になる（panel-analysisと同じ理由で除外）
-const PANEL_IDS = ['dashboard', 'pastresults'];
+const PANEL_IDS = ['pastresults'];
 const SUB_IDS = ['general', 'katsudo', 'shodan'];
 const KSUB_IDS = ['daily', 'weekly', 'monthly'];
 
 async function renderCurrentView() {
   const isTeam = !selectedMember;
   const sheet = currentSheet();
-  const need = isTeam ? [SHEET_DASHBOARD, SHEET_REPORT, SHEET_ANALYSIS, SHEET_PAST_RESULTS] : [sheet, SHEET_ANALYSIS, SHEET_PAST_RESULTS];
+  const need = [sheet, SHEET_ANALYSIS, SHEET_PAST_RESULTS];
 
   showStatus('読み込み中...', false);
   let sheets;
@@ -1344,11 +1352,13 @@ async function renderCurrentView() {
   PANEL_IDS.forEach(id => { document.getElementById('panel-' + id).innerHTML = ''; });
   SUB_IDS.forEach(id => { document.getElementById('sub-' + id).innerHTML = ''; });
   KSUB_IDS.forEach(id => { document.getElementById('ksub-' + id).innerHTML = ''; });
+  document.getElementById('kekkaSummary').innerHTML = '';
 
   const own = parseSheet(sheets[sheet] || []);
   const analysis = parseSheet(sheets[SHEET_ANALYSIS] || []);
 
-  // ダッシュボードはいったん空にしている（作り直し予定）。あえて何も描画しない
+  // 結果の完了タブ最上部：評価項目（新規獲得件数／P2コンサル部提案提供数／商談実施数）の結果/目標/不足/達成率
+  renderKpiSummary(document.getElementById('kekkaSummary'), own);
 
   // 結果の完了（日報・週報・月報を1タブにまとめ、内部でL3切替）：入力欄＋スプシ側で生成済みの報告文
   renderReportPanel('daily', sheet, own);
@@ -1365,6 +1375,7 @@ async function renderCurrentView() {
   PANEL_IDS.forEach(id => reveal(document.getElementById('panel-' + id)));
   SUB_IDS.forEach(id => reveal(document.getElementById('sub-' + id)));
   KSUB_IDS.forEach(id => reveal(document.getElementById('ksub-' + id)));
+  reveal(document.getElementById('kekkaSummary'));
   hideStatus();
 }
 
@@ -2410,6 +2421,73 @@ function appendMaybeCollapsible(root, rows) {
   det.appendChild(sum);
   det.appendChild(buildTable(detailRows));
   root.appendChild(det);
+}
+
+// ── 結果の完了タブ最上部：評価項目（新規獲得件数／P2コンサル部提案提供数／商談実施数）の
+//    結果/目標/不足/達成率を3Q・月次（9〜11月）・対営業日進捗の5行で見せる。
+//    シート側（kpi-v3-tabs.js buildKpiSummaryRows）が「指標名,結果,目標,不足,達成率」の見出し行を
+//    ブロックの先頭に置く形で出力しているので、その見出し行を区切りにブロックへ分ける ──
+function renderKpiSummary(root, parsed) {
+  const sec = findSection(parsed, t => t.startsWith('■KPI'));
+  if (!sec) return;
+  const rows = dataRowsOf(sec);
+  const blocks = [];
+  let cur = null;
+  rows.forEach(r => {
+    if (r[1] === '結果' && r[2] === '目標' && r[3] === '不足' && r[4] === '達成率') {
+      cur = { title: r[0], rows: [] };
+      blocks.push(cur);
+      return;
+    }
+    if (cur) cur.rows.push(r);
+  });
+  if (!blocks.length) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'kpi-summary';
+  blocks.forEach(b => wrap.appendChild(buildKpiSummaryCard(b)));
+  root.appendChild(wrap);
+}
+
+function buildKpiSummaryCard(block) {
+  const card = document.createElement('div');
+  card.className = 'kpi-summary-card';
+  const h = document.createElement('h3');
+  h.textContent = block.title;
+  card.appendChild(h);
+
+  const table = document.createElement('table');
+  const htr = document.createElement('tr');
+  htr.className = 'header-row';
+  ['期間', '結果', '目標', '不足', '達成率'].forEach(t => {
+    const td = document.createElement('td');
+    td.textContent = t;
+    htr.appendChild(td);
+  });
+  table.appendChild(htr);
+
+  block.rows.forEach(r => {
+    const tr = document.createElement('tr');
+    if (r[0] === '3Q') tr.className = 'kpi-summary-q';
+    if (r[0] === '対営業日進捗') tr.className = 'kpi-summary-pace';
+    r.forEach((v, i) => {
+      const td = document.createElement('td');
+      if (i === 4) {
+        const pctNum = parseFloat(String(v).replace('%', ''));
+        const tone = isFinite(pctNum) ? (pctNum >= 100 ? 'good' : pctNum >= 70 ? 'warning' : 'critical') : null;
+        const badge = document.createElement('span');
+        badge.className = 'past-achieve' + (tone ? ' ' + tone : '');
+        badge.textContent = v;
+        td.appendChild(badge);
+      } else {
+        td.textContent = fmtCell(v);
+      }
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+  card.appendChild(table);
+  return card;
 }
 
 // ── 過去実績タブ：12期の1Q〜4Qを1ページに並べて四半期間の比較をしやすくする。
