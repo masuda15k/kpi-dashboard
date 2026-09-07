@@ -566,6 +566,52 @@
   tr.kpi-summary-q td { font-weight: 700; }
   tr.kpi-summary-pace td { background: var(--card-2); }
 
+  /* ── 結果の完了タブ：歩留まりファネル＋対応が必要な案件（統合ホーム案） ── */
+  .funnel-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 18px 20px 20px; margin-bottom: 16px; }
+  .funnel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; flex-wrap: wrap; gap: 10px; }
+  .funnel-head h3 { font-size: 14px; font-weight: 700; margin: 0; }
+  .funnel-sub { font-size: 11.5px; color: var(--muted-2); margin-bottom: 16px; }
+  .seg-toggle { display: flex; background: var(--card-2); border-radius: 999px; padding: 3px; gap: 2px; }
+  .seg-toggle button { background: none; border: none; color: var(--muted); font-size: 12px; font-weight: 600; padding: 6px 13px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+  .seg-toggle button.active { background: var(--accent); color: var(--bg); }
+  .seg-toggle button:not(.active):hover { color: var(--text); }
+  .funnel-row { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding-bottom: 6px; }
+  .funnel-stage { flex: 1 0 88px; min-width: 88px; text-align: center; position: relative; padding: 0 4px; }
+  .funnel-stage .n { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .funnel-stage .l { font-size: 10.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
+  .funnel-bar-wrap { height: 46px; display: flex; align-items: flex-end; justify-content: center; margin: 8px 0 6px; }
+  .funnel-bar { width: 60%; border-radius: 4px 4px 0 0; background: var(--accent); min-height: 3px; }
+  .funnel-arrow { flex: 0 0 32px; display: flex; align-items: center; justify-content: center; position: relative; top: -18px; }
+  .funnel-arrow .pct { font-size: 10.5px; font-weight: 700; color: var(--muted); white-space: nowrap; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); }
+  .funnel-arrow .pct.low { color: var(--critical); }
+  .funnel-legend { display: flex; gap: 18px; margin-top: 14px; font-size: 11px; color: var(--muted-2); flex-wrap: wrap; }
+  .funnel-legend b { color: var(--text); font-weight: 700; }
+  .breakdown { display: none; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .breakdown.active { display: block; }
+  .breakdown .note { font-size: 11px; color: var(--muted-2); margin-bottom: 8px; }
+  .breakdown table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .breakdown td { padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .breakdown tr:last-child td { border-bottom: none; }
+  .breakdown tr.header-row td { color: var(--muted-2); font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
+  .breakdown td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .deals-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 18px 20px 8px; }
+  .deals-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 2px; }
+  .deals-sub { font-size: 11.5px; color: var(--muted-2); margin-bottom: 14px; }
+  .deal-row { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-top: 1px solid var(--border); text-decoration: none; color: inherit; }
+  .deal-row:first-of-type { border-top: none; }
+  .deal-row:hover { background: var(--card-2); border-radius: 10px; }
+  .deal-stage { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; flex: 0 0 auto; white-space: nowrap; }
+  .deal-stage.p2 { background: var(--accent-tint); color: var(--accent-dark); }
+  .deal-stage.pn { background: var(--warning-tint); color: var(--warning); }
+  .deal-main { flex: 1; min-width: 0; }
+  .deal-main .company { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .deal-main .meta { font-size: 11px; color: var(--muted-2); }
+  .deal-days { font-size: 12px; font-weight: 700; color: var(--critical); flex: 0 0 auto; white-space: nowrap; }
+  .deal-open { flex: 0 0 auto; display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--accent-dark); }
+  .deal-open svg { width: 12px; height: 12px; }
+  .deals-empty { padding: 16px 4px; color: var(--muted); font-size: 12.5px; }
+
   /* ── 過去実績：メンバー別実績表（評価項目の強調＋項目ごとの表示トグル） ── */
   .past-kpi { color: var(--accent); font-weight: 800; background: var(--accent-tint); }
   tr.header-row td.past-kpi { color: var(--accent-dark); }
@@ -982,6 +1028,8 @@
     <div id="panel-kekka" class="tab-panel active">
       <!-- 評価項目（新規獲得件数／P2コンサル部提案提供数／商談実施数）の結果/目標/不足/達成率サマリー -->
       <div id="kekkaSummary"></div>
+      <!-- 歩留まりファネル（全体／役職セグメント別／起因・受領別）＋対応が必要な案件（SFリンク付き） -->
+      <div id="kekkaFunnel"></div>
       <!-- L3：結果の完了タブの中だけの切替（日報/週報/月報） -->
       <div class="seg kseg" id="kekkaSeg">
         <button class="kseg-btn active" data-ksub="daily">日報</button>
@@ -1363,12 +1411,16 @@ async function renderCurrentView() {
   SUB_IDS.forEach(id => { document.getElementById('sub-' + id).innerHTML = ''; });
   KSUB_IDS.forEach(id => { document.getElementById('ksub-' + id).innerHTML = ''; });
   document.getElementById('kekkaSummary').innerHTML = '';
+  document.getElementById('kekkaFunnel').innerHTML = '';
 
   const own = parseSheet(sheets[sheet] || []);
   const analysis = parseSheet(sheets[SHEET_ANALYSIS] || []);
 
   // 結果の完了タブ最上部：評価項目（新規獲得件数／P2コンサル部提案提供数／商談実施数）の結果/目標/不足/達成率
   renderKpiSummary(document.getElementById('kekkaSummary'), own);
+
+  // 歩留まりファネル（全体／役職セグメント別／起因・受領別の切替）＋対応が必要な案件（SFリンク付き）
+  renderKpiFunnel(document.getElementById('kekkaFunnel'), own, analysis);
 
   // 結果の完了（日報・週報・月報を1タブにまとめ、内部でL3切替）：入力欄＋スプシ側で生成済みの報告文
   renderReportPanel('daily', sheet, own);
@@ -1386,6 +1438,7 @@ async function renderCurrentView() {
   SUB_IDS.forEach(id => reveal(document.getElementById('sub-' + id)));
   KSUB_IDS.forEach(id => reveal(document.getElementById('ksub-' + id)));
   reveal(document.getElementById('kekkaSummary'));
+  reveal(document.getElementById('kekkaFunnel'));
   hideStatus();
 }
 
@@ -2498,6 +2551,228 @@ function buildKpiSummaryCard(block) {
   });
   card.appendChild(table);
   return card;
+}
+
+// ── 結果の完了タブ：歩留まりファネル（全体／役職セグメント別／起因・受領別）＋対応が必要な案件 ──
+// 「— 見出し —」で区切られた分析タブ■1の小表（商談カテゴリー／KPI区分／起点受領／役職セグメント）を
+// {label, header, rows}の配列に分ける
+function parseDividerBlocks(sec) {
+  const rows = dataRowsOf(sec);
+  const blocks = [];
+  let cur = null;
+  rows.forEach(r => {
+    const first = String(r[0] || '');
+    const m = first.match(/^—\s*(.+?)\s*—$/);
+    if (m) { cur = { label: m[1], header: null, rows: [] }; blocks.push(cur); return; }
+    if (!cur) return;
+    if (!cur.header) { cur.header = r; return; }
+    cur.rows.push(r);
+  });
+  return blocks;
+}
+
+function renderKpiFunnel(root, own, analysis) {
+  const funnelSec = findSection(own, t => t.startsWith('■FUNNEL'));
+  if (!funnelSec) return;
+  const frows = dataRowsOf(funnelSec);
+  const stageHeader = frows[0] || [];
+  const stageValues = (frows[1] || []).map(v => Number(v) || 0);
+  const stockHeader = frows[2] || [];
+  const stockValues = frows[3] || [];
+
+  const seg1Sec = findSection(analysis, t => t.startsWith('■1.'));
+  const segBlocks = seg1Sec ? parseDividerBlocks(seg1Sec) : [];
+  const sourceBlock = segBlocks.find(b => b.label.includes('起点/受領'));
+  const roleBlock = segBlocks.find(b => b.label.includes('役職セグメント'));
+
+  const card = document.createElement('div');
+  card.className = 'funnel-card';
+
+  const head = document.createElement('div');
+  head.className = 'funnel-head';
+  const h = document.createElement('h3');
+  h.textContent = '歩留まりファネル（Q累計）';
+  head.appendChild(h);
+
+  const toggle = document.createElement('div');
+  toggle.className = 'seg-toggle';
+  const views = [{ key: 'all', label: '全体' }];
+  if (roleBlock) views.push({ key: 'role', label: '役職セグメント別' });
+  if (sourceBlock) views.push({ key: 'source', label: '起因・受領別' });
+  views.forEach((v, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = v.label;
+    btn.dataset.view = v.key;
+    if (i === 0) btn.classList.add('active');
+    toggle.appendChild(btn);
+  });
+  head.appendChild(toggle);
+  card.appendChild(head);
+
+  const sub = document.createElement('div');
+  sub.className = 'funnel-sub';
+  sub.textContent = 'アプローチ〜成約までの実数と歩留まり率（率＝直前段階に対する割合）';
+  card.appendChild(sub);
+
+  const funnelRow = document.createElement('div');
+  funnelRow.className = 'funnel-row';
+  card.appendChild(funnelRow);
+
+  function renderStages() {
+    funnelRow.innerHTML = '';
+    // アプローチ（架電数）と成約（案件数）では桁が大きく違うため、線形だと後段のバーが見えなくなる。
+    // 平方根スケールで圧縮し、値が0でない限りバーが視認できるようにする
+    const maxRoot = Math.sqrt(Math.max(1, ...stageValues));
+    stageHeader.forEach((label, i) => {
+      const stage = document.createElement('div');
+      stage.className = 'funnel-stage';
+      const barWrap = document.createElement('div');
+      barWrap.className = 'funnel-bar-wrap';
+      const bar = document.createElement('div');
+      bar.className = 'funnel-bar';
+      bar.style.height = Math.max(4, Math.round((Math.sqrt(stageValues[i]) / maxRoot) * 44)) + 'px';
+      barWrap.appendChild(bar);
+      const n = document.createElement('div');
+      n.className = 'n';
+      n.textContent = stageValues[i];
+      const l = document.createElement('div');
+      l.className = 'l';
+      l.textContent = label;
+      stage.append(n, barWrap, l);
+      funnelRow.appendChild(stage);
+
+      if (i < stageHeader.length - 1) {
+        const next = stageValues[i + 1];
+        const arrow = document.createElement('div');
+        arrow.className = 'funnel-arrow';
+        const pct = stageValues[i] > 0 ? Math.round((next / stageValues[i]) * 100) : null;
+        arrow.innerHTML = '<svg width="30" height="18" viewBox="0 0 34 18"><path d="M2 9h26m0 0l-6-6m6 6l-6 6" stroke="var(--muted-2)" stroke-width="1.6" fill="none"/></svg>';
+        const pctEl = document.createElement('div');
+        pctEl.className = 'pct' + (pct !== null && pct < 30 ? ' low' : '');
+        pctEl.textContent = pct === null ? '−' : pct + '%';
+        arrow.appendChild(pctEl);
+        funnelRow.appendChild(arrow);
+      }
+    });
+  }
+  renderStages();
+
+  if (stockHeader.length && stockValues.length) {
+    const legend = document.createElement('div');
+    legend.className = 'funnel-legend';
+    stockHeader.forEach((label, i) => {
+      const span = document.createElement('span');
+      const b = document.createElement('b');
+      b.textContent = fmtCell(stockValues[i]);
+      span.appendChild(b);
+      span.append(' ' + String(label).replace('在庫：', ''));
+      legend.appendChild(span);
+    });
+    card.appendChild(legend);
+  }
+
+  function buildBreakdownTable(block) {
+    const wrap = document.createElement('div');
+    wrap.className = 'breakdown active';
+    if (block.label.includes('役職セグメント')) {
+      const note = document.createElement('div');
+      note.className = 'note';
+      note.textContent = '役職セグメントはP2（提案獲得）到達時に初めて判明するため、n(P2提供)を分母にしています';
+      wrap.appendChild(note);
+    }
+    const table = document.createElement('table');
+    const htr = document.createElement('tr');
+    htr.className = 'header-row';
+    block.header.forEach(hd => { const td = document.createElement('td'); td.textContent = hd; htr.appendChild(td); });
+    table.appendChild(htr);
+    block.rows.forEach(r => {
+      const tr = document.createElement('tr');
+      r.forEach((v, i) => { const td = document.createElement('td'); if (i > 0) td.className = 'num'; td.textContent = fmtCell(v); tr.appendChild(td); });
+      table.appendChild(tr);
+    });
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  const breakdownHolder = document.createElement('div');
+  card.appendChild(breakdownHolder);
+
+  toggle.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      toggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      breakdownHolder.innerHTML = '';
+      if (btn.dataset.view === 'all') return;
+      const block = btn.dataset.view === 'role' ? roleBlock : sourceBlock;
+      if (block) breakdownHolder.appendChild(buildBreakdownTable(block));
+    });
+  });
+
+  root.appendChild(card);
+
+  // ── 対応が必要な案件（分析タブ■4滞留案件・■5データ品質チェックを再利用。クリックでSF検索を開く） ──
+  const dealsCard = document.createElement('div');
+  dealsCard.className = 'deals-card';
+  const dh = document.createElement('h3');
+  dh.textContent = '対応が必要な案件';
+  dealsCard.appendChild(dh);
+  const dsub = document.createElement('div');
+  dsub.className = 'deals-sub';
+  dsub.textContent = 'P3以降30日超の滞留・P2放置 ／ クリックでSF検索を開く（商談ID未取得のため会社名検索）';
+  dealsCard.appendChild(dsub);
+
+  const deals = [];
+  const stallSec = findSection(analysis, t => t.startsWith('■4.'));
+  if (stallSec) {
+    dataRowsOf(stallSec).slice(1).forEach(r => {
+      if (!r[0] || r[0] === '（該当なし）') return;
+      deals.push({ company: r[0], owner: r[1], phase: r[2] || '滞留', note: `${r[3] || ''}滞留`, tone: 'pn' });
+    });
+  }
+  const qcSec = findSection(analysis, t => t.startsWith('■5.'));
+  if (qcSec) {
+    dataRowsOf(qcSec).slice(1).forEach(r => {
+      if (!r[1] || r[1] === '（該当なし）') return;
+      deals.push({ company: r[1], owner: r[2], phase: r[0] || '要確認', note: `予定日${r[3] || ''}を${r[4] || ''}営業日超過`, tone: 'p2' });
+    });
+  }
+
+  if (!deals.length) {
+    const empty = document.createElement('div');
+    empty.className = 'deals-empty';
+    empty.textContent = '現在、対応が必要な案件はありません。';
+    dealsCard.appendChild(empty);
+  } else {
+    deals.forEach(d => {
+      const a = document.createElement('a');
+      a.className = 'deal-row';
+      a.href = 'https://shikigaku.lightning.force.com/lightning/search/' + encodeURIComponent(d.company);
+      a.target = '_blank';
+      a.rel = 'noopener';
+      const stage = document.createElement('span');
+      stage.className = 'deal-stage ' + d.tone;
+      stage.textContent = d.phase;
+      const main = document.createElement('div');
+      main.className = 'deal-main';
+      const c = document.createElement('div');
+      c.className = 'company';
+      c.textContent = d.company;
+      const m = document.createElement('div');
+      m.className = 'meta';
+      m.textContent = `担当：${d.owner || '-'}`;
+      main.append(c, m);
+      const days = document.createElement('span');
+      days.className = 'deal-days';
+      days.textContent = d.note;
+      const open = document.createElement('span');
+      open.className = 'deal-open';
+      open.innerHTML = 'SFで開く <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17L17 7M9 7h8v8"/></svg>';
+      a.append(stage, main, days, open);
+      dealsCard.appendChild(a);
+    });
+  }
+  root.appendChild(dealsCard);
 }
 
 // ── 過去実績タブ：12期の1Q〜4Qを1ページに並べて四半期間の比較をしやすくする。
