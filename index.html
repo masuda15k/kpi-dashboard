@@ -617,6 +617,16 @@
   .deal-open svg { width: 12px; height: 12px; }
   .deals-empty { padding: 16px 4px; color: var(--muted); font-size: 12.5px; }
 
+  /* ── 結果の完了タブ最下部：自由メモ（スプシ「メモ」タブのミラー表示） ── */
+  .memo-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 14px 18px 16px; margin-top: 12px; }
+  .memo-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .memo-head h3 { font-size: 14px; font-weight: 700; margin: 0; }
+  .memo-edit-link { font-size: 11.5px; font-weight: 700; color: var(--accent-dark); text-decoration: none; }
+  .memo-edit-link:hover { text-decoration: underline; }
+  .memo-line { font-size: 13px; color: var(--muted); padding: 4px 0; white-space: pre-wrap; }
+  .memo-card .table-scroll { margin-top: 8px; margin-bottom: 8px; }
+  .memo-empty { padding: 8px 0; color: var(--muted-2); font-size: 12.5px; }
+
   /* ── 過去実績：メンバー別実績表（評価項目の強調＋項目ごとの表示トグル） ── */
   .past-kpi { color: var(--accent); font-weight: 800; background: var(--accent-tint); }
   tr.header-row td.past-kpi { color: var(--accent-dark); }
@@ -1044,6 +1054,8 @@
       <div id="ksub-daily" class="sub-panel active"></div>
       <div id="ksub-weekly" class="sub-panel"></div>
       <div id="ksub-monthly" class="sub-panel"></div>
+      <!-- 自由メモ：スプレッドシートの「メモ」タブをそのまま表示（自動更新の対象外・自由編集用） -->
+      <div id="kekkaMemo"></div>
     </div>
     <div id="panel-pastresults" class="tab-panel"></div>
     <div id="panel-analysis" class="tab-panel">
@@ -1070,6 +1082,7 @@ const SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleap
 const SHEET_REPORT    = '報告';           // 1係全体の日報・週報・月報（増田さんの入力先）
 const SHEET_ANALYSIS  = '分析';           // 1係全体の分析（架電・商談分析を含む）
 const SHEET_PAST_RESULTS = '過去実績';    // 1係全体・期ごとの通しレポート（現状は12期のみ）
+const SHEET_MEMO = 'メモ';                // 増田さんが自由に書く欄。自動生成の対象外・そのまま表示するだけ
 const MEMBERS = ['菅原', '丸野', '飯山']; // 個人タブを持つメンバー（表示順）。2026-09-01：江波戸さん異動につき除外
 
 // ログイン中のメールアドレス → 本人が書き込めるタブ（tab）と、画面表示用の呼び方（label）。
@@ -1401,7 +1414,7 @@ const KSUB_IDS = ['daily', 'weekly', 'monthly'];
 async function renderCurrentView() {
   const isTeam = !selectedMember;
   const sheet = currentSheet();
-  const need = [sheet, SHEET_ANALYSIS, SHEET_PAST_RESULTS];
+  const need = [sheet, SHEET_ANALYSIS, SHEET_PAST_RESULTS, SHEET_MEMO];
 
   showStatus('読み込み中...', false);
   let sheets;
@@ -1417,6 +1430,7 @@ async function renderCurrentView() {
   KSUB_IDS.forEach(id => { document.getElementById('ksub-' + id).innerHTML = ''; });
   document.getElementById('kekkaSummary').innerHTML = '';
   document.getElementById('kekkaFunnel').innerHTML = '';
+  document.getElementById('kekkaMemo').innerHTML = '';
 
   const own = parseSheet(sheets[sheet] || []);
   const analysis = parseSheet(sheets[SHEET_ANALYSIS] || []);
@@ -1426,6 +1440,9 @@ async function renderCurrentView() {
 
   // 歩留まりファネル（全体／役職セグメント別／起因・受領別の切替）＋対応が必要な案件（SFリンク付き）
   renderKpiFunnel(document.getElementById('kekkaFunnel'), own, analysis);
+
+  // 自由メモ：スプシの「メモ」タブをそのまま表示（自動生成の対象外。スプシ本体を直接編集してもらう）
+  renderKekkaMemo(document.getElementById('kekkaMemo'), sheets[SHEET_MEMO] || []);
 
   // 結果の完了（日報・週報・月報を1タブにまとめ、内部でL3切替）：入力欄＋スプシ側で生成済みの報告文
   renderReportPanel('daily', sheet, own);
@@ -1444,6 +1461,7 @@ async function renderCurrentView() {
   KSUB_IDS.forEach(id => reveal(document.getElementById('ksub-' + id)));
   reveal(document.getElementById('kekkaSummary'));
   reveal(document.getElementById('kekkaFunnel'));
+  reveal(document.getElementById('kekkaMemo'));
   hideStatus();
 }
 
@@ -2787,6 +2805,61 @@ function renderKpiFunnel(root, own, analysis) {
     });
   }
   root.appendChild(dealsCard);
+}
+
+// ── 結果の完了タブ最下部：自由メモ（スプシ「メモ」タブをそのまま表示。自動生成の対象外）
+// 空行で区切って複数ブロックに分け、1セルだけの行はメモ書き、それ以外は表として描画する。
+// 編集は常にGoogle Sheets側で行う想定（webapp側からの書き込みは提供しない＝壊れる余地を作らない）
+function renderKekkaMemo(root, rows) {
+  const card = document.createElement('div');
+  card.className = 'memo-card';
+
+  const head = document.createElement('div');
+  head.className = 'memo-head';
+  const h = document.createElement('h3');
+  h.textContent = 'メモ';
+  head.appendChild(h);
+  const link = document.createElement('a');
+  link.className = 'memo-edit-link';
+  link.href = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit#gid=11`;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  link.textContent = 'Google Sheetsで編集';
+  head.appendChild(link);
+  card.appendChild(head);
+
+  const blocks = [];
+  let cur = [];
+  (rows || []).forEach(r => {
+    const empty = !r || r.every(c => !c);
+    if (empty) { if (cur.length) blocks.push(cur); cur = []; }
+    else cur.push(r);
+  });
+  if (cur.length) blocks.push(cur);
+  // 先頭の説明文（タブ作成時の案内書き）は表示上のノイズなので除く
+  const contentBlocks = blocks.slice(1);
+
+  if (!contentBlocks.length) {
+    const empty = document.createElement('div');
+    empty.className = 'memo-empty';
+    empty.textContent = 'まだ何も書かれていません。「Google Sheetsで編集」から自由に書き足せます。';
+    card.appendChild(empty);
+  } else {
+    contentBlocks.forEach(block => {
+      const isTextBlock = block.every(r => r.filter(c => c).length <= 1);
+      if (isTextBlock) {
+        block.forEach(r => {
+          const p = document.createElement('div');
+          p.className = 'memo-line';
+          p.textContent = r[0] || '';
+          card.appendChild(p);
+        });
+      } else {
+        card.appendChild(buildTable(block));
+      }
+    });
+  }
+  root.appendChild(card);
 }
 
 // ── 過去実績タブ：12期の1Q〜4Qを1ページに並べて四半期間の比較をしやすくする。
