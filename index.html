@@ -109,7 +109,7 @@
   /* 間（ま）：余白を広く取る。左右の広い余白そのものが装飾になる
      （2026-09-08：評価項目カード3枚を横並びにし、1画面で見渡せるようスクロール量を減らすため
      幅を広げ、上下マージンを詰めた） */
-  main { max-width: 1240px; margin: 32px auto 60px; padding: 0 28px; position: relative; z-index: 1; }
+  main { max-width: 1240px; margin: 18px auto 40px; padding: 0 28px; position: relative; z-index: 1; }
 
   #loginGate {
     background: var(--card);
@@ -557,39 +557,42 @@
   /* ── 結果の完了タブ最上部：評価項目サマリー（商談実施数／P2コンサル部提案提供数／新規獲得件数）
      3枚を横並びで見渡せるよう、mainの拡幅とあわせてカード最小幅を絞っている ── */
   .kpi-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 20px; }
-  .kpi-summary-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 14px 16px; }
-  .kpi-summary-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
-  .kpi-summary-card h3 { font-size: 14px; font-weight: 700; margin: 0; }
+  .kpi-summary-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 10px 14px; max-height: 200px; overflow-y: auto; }
+  .kpi-summary-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .kpi-summary-card h3 { font-size: 13px; font-weight: 700; margin: 0; }
   .kpi-summary-conv { font-size: 11px; font-weight: 700; color: var(--accent); white-space: nowrap; }
   /* 「対営業日進捗」の行ラベルが長く、auto幅だと達成率列を圧迫してはみ出す（overflow:hiddenで欠けて見える）ため
      列幅を固定して確保する */
   .kpi-summary-card table { font-size: 12.5px; table-layout: fixed; }
-  .kpi-summary-card td { padding: 5px 4px; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-summary-card td { padding: 3px 4px; overflow: hidden; text-overflow: ellipsis; }
   .kpi-summary-card td:first-child { width: 34%; padding-left: 6px; }
   .kpi-summary-card td:not(:first-child) { width: 16.5%; text-align: right; }
   .kpi-summary-card td:last-child { text-align: center; padding-right: 6px; }
   tr.kpi-summary-q td { font-weight: 700; }
   tr.kpi-summary-pace td { background: var(--card-2); }
+  .kpi-more-row td { padding-top: 6px; padding-bottom: 0; }
+  .kpi-more-btn { background: none; border: none; color: var(--muted); font-size: 11px; font-weight: 600; cursor: pointer; padding: 2px 0; font-family: inherit; text-decoration: underline dotted var(--muted-2); }
+  .kpi-more-btn:hover { color: var(--accent); }
 
   /* ── 結果の完了タブ：歩留まりファネル＋対応が必要な案件（統合ホーム案） ── */
-  .funnel-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 14px 18px 16px; margin-bottom: 12px; }
+  .funnel-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 10px 16px 12px; margin-bottom: 12px; max-height: 230px; overflow-y: auto; }
   .funnel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; flex-wrap: wrap; gap: 10px; }
   .funnel-head h3 { font-size: 14px; font-weight: 700; margin: 0; }
-  .funnel-sub { font-size: 11.5px; color: var(--muted-2); margin-bottom: 10px; }
+  .funnel-sub { font-size: 11px; color: var(--muted-2); margin-bottom: 4px; }
   .seg-toggle { display: flex; background: var(--card-2); border-radius: 999px; padding: 3px; gap: 2px; }
   .seg-toggle button { background: none; border: none; color: var(--muted); font-size: 12px; font-weight: 600; padding: 6px 13px; border-radius: 999px; cursor: pointer; font-family: inherit; }
   .seg-toggle button.active { background: var(--accent); color: var(--bg); }
   .seg-toggle button:not(.active):hover { color: var(--text); }
-  .funnel-row { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding-bottom: 6px; flex: 1; min-height: 46px; }
+  .funnel-row { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding-bottom: 4px; flex: 1; min-height: 36px; }
   .funnel-stage { flex: 1 0 88px; min-width: 88px; text-align: center; position: relative; padding: 0 4px; }
   .funnel-stage .n { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .funnel-stage .l { font-size: 10.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
-  .funnel-bar-wrap { flex: 1; min-height: 46px; display: flex; align-items: flex-end; justify-content: center; margin: 8px 0 6px; }
+  .funnel-bar-wrap { flex: 1; min-height: 36px; display: flex; align-items: flex-end; justify-content: center; margin: 4px 0; }
   .funnel-bar { width: 60%; border-radius: 4px 4px 0 0; background: var(--accent); min-height: 3px; }
   .funnel-arrow { flex: 0 0 32px; display: flex; align-items: center; justify-content: center; position: relative; top: -18px; }
   .funnel-arrow .pct { font-size: 10.5px; font-weight: 700; color: var(--muted); white-space: nowrap; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); }
   .funnel-arrow .pct.low { color: var(--critical); }
-  .funnel-legend { display: flex; gap: 18px; margin-top: 14px; font-size: 11px; color: var(--muted-2); flex-wrap: wrap; }
+  .funnel-legend { display: flex; gap: 18px; margin-top: 6px; font-size: 11px; color: var(--muted-2); flex-wrap: wrap; }
   .funnel-legend b { color: var(--text); font-weight: 700; }
   .breakdown { display: none; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
   .breakdown.active { display: block; }
@@ -600,7 +603,7 @@
   .breakdown tr.header-row td { color: var(--muted-2); font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
   .breakdown td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
-  .deals-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 14px 18px 6px; }
+  .deals-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 10px 16px 4px; }
   .deals-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 2px; }
   .deals-sub { font-size: 11.5px; color: var(--muted-2); margin-bottom: 14px; }
   .deal-row { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-top: 1px solid var(--border); text-decoration: none; color: inherit; }
@@ -619,17 +622,17 @@
 
   /* ── 結果の完了タブ：ミッションコントロール型グリッド（2026-09-08）
      カード単体のデザインは既存を流用し、配置だけを12列グリッドにまとめて1画面で見渡せるようにする ── */
-  .mc-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; align-items: stretch; margin-bottom: 14px; }
+  .mc-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px; align-items: stretch; margin-bottom: 10px; }
   .mc-grid .kpi-summary-card { grid-column: span 4; margin: 0; }
-  .mc-grid .funnel-card { grid-column: span 8; grid-row: span 2; margin: 0; display: flex; flex-direction: column; }
-  .mc-grid .deals-card { grid-column: span 4; grid-row: span 2; margin: 0; display: flex; flex-direction: column; max-height: 360px; overflow-y: auto; }
-  .mc-grid .memo-card { grid-column: span 4; margin: 0; max-height: 260px; overflow-y: auto; }
+  .mc-grid .funnel-card { grid-column: span 8; margin: 0; display: flex; flex-direction: column; }
+  .mc-grid .deals-card { grid-column: span 4; margin: 0; display: flex; flex-direction: column; max-height: 230px; overflow-y: auto; }
+  .mc-grid .memo-card { grid-column: span 4; margin: 0; max-height: 170px; overflow-y: auto; }
   @media (max-width: 900px) {
     .mc-grid .kpi-summary-card, .mc-grid .funnel-card, .mc-grid .deals-card, .mc-grid .memo-card, .mc-grid .activity-card, .mc-grid .report-card { grid-column: 1 / -1; }
   }
 
   /* ネクストアクション：数字カードより上位。1〜2件、根拠つきで表示する */
-  .next-action { background: linear-gradient(120deg, var(--accent-tint), transparent 65%); border: 1px solid var(--accent); border-radius: var(--radius); padding: 12px 18px; margin-bottom: 14px; display: flex; gap: 24px; align-items: baseline; flex-wrap: wrap; }
+  .next-action { background: linear-gradient(120deg, var(--accent-tint), transparent 65%); border: 1px solid var(--accent); border-radius: var(--radius); padding: 8px 16px; margin-bottom: 10px; display: flex; gap: 24px; align-items: baseline; flex-wrap: wrap; }
   .next-action .eyebrow { font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); flex: 0 0 auto; }
   .next-action ul { margin: 0; padding: 0; list-style: none; display: flex; gap: 26px; flex-wrap: wrap; flex: 1; }
   .next-action li { display: flex; align-items: baseline; gap: 7px; font-size: 12.5px; }
@@ -639,7 +642,7 @@
   .next-action.ok .eyebrow, .next-action.ok .dot { color: var(--good); background: var(--good); }
 
   /* 直近の活動：分析■6（商談分析）から会社名つきで最新順に表示。ミッションコントロール的な「動いている感」を出す */
-  .activity-card { grid-column: span 4; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 14px 18px 10px; max-height: 360px; overflow-y: auto; }
+  .activity-card { grid-column: span 4; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 12px 16px 8px; max-height: 170px; overflow-y: auto; }
   .activity-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 10px; }
   .activity-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
   .activity-row:first-of-type { border-top: none; }
@@ -653,12 +656,12 @@
   .activity-date { font-size: 10.5px; color: var(--muted-2); flex: 0 0 auto; white-space: nowrap; }
 
   /* 週次トレンド（ファネルカード内の小さな折れ線） */
-  .trend-strip { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); flex: 0 0 auto; }
+  .trend-strip { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); flex: 0 0 auto; }
   .trend-strip .lab { font-size: 10.5px; color: var(--muted-2); margin-bottom: 4px; }
-  .trend-strip svg { display: block; width: 100%; height: 40px; }
+  .trend-strip svg { display: block; width: 100%; height: 28px; }
 
   /* 日報・週報・月報：数字だけの入口カードにして、開くと既存の入力フォームを下に展開する */
-  .report-card { grid-column: span 4; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 14px 18px; display: flex; flex-direction: column; }
+  .report-card { grid-column: span 4; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 10px 16px; display: flex; flex-direction: column; }
   .report-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 8px; }
   .report-card .row { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; padding: 4px 0; }
   .report-card .row b { font-variant-numeric: tabular-nums; }
@@ -2602,7 +2605,7 @@ function buildKpiSummaryCard(block) {
   });
   table.appendChild(htr);
 
-  block.rows.forEach(r => {
+  const buildRow = r => {
     const tr = document.createElement('tr');
     if (r[0] === '3Q' || r[0] === '今週') tr.className = 'kpi-summary-q';
     if (r[0] === '対営業日進捗') tr.className = 'kpi-summary-pace';
@@ -2620,8 +2623,37 @@ function buildKpiSummaryCard(block) {
       }
       tr.appendChild(td);
     });
-    table.appendChild(tr);
-  });
+    return tr;
+  };
+
+  // 1画面に収めるため、既定では3Q／今週／対営業日進捗だけを出し、9〜11月の月次内訳は
+  // トグルで開くまで畳んでおく（GOALS.mdの「詳細は能動的に潜る」原則）
+  const monthlyLabels = ['9月', '10月', '11月'];
+  block.rows.filter(r => !monthlyLabels.includes(r[0])).forEach(r => table.appendChild(buildRow(r)));
+
+  const monthlyRows = block.rows.filter(r => monthlyLabels.includes(r[0]));
+  if (monthlyRows.length) {
+    const moreTr = document.createElement('tr');
+    moreTr.className = 'kpi-more-row';
+    const moreTd = document.createElement('td');
+    moreTd.colSpan = 5;
+    const moreBtn = document.createElement('button');
+    moreBtn.type = 'button';
+    moreBtn.className = 'kpi-more-btn';
+    moreBtn.textContent = '月次内訳を見る（9〜11月）';
+    moreTd.appendChild(moreBtn);
+    moreTr.appendChild(moreTd);
+    table.appendChild(moreTr);
+
+    const monthlyTrs = monthlyRows.map(buildRow);
+    monthlyTrs.forEach(tr => { tr.style.display = 'none'; table.insertBefore(tr, moreTr); });
+    moreBtn.addEventListener('click', () => {
+      const open = monthlyTrs[0].style.display === 'none';
+      monthlyTrs.forEach(tr => { tr.style.display = open ? '' : 'none'; });
+      moreBtn.textContent = open ? '月次内訳を閉じる' : '月次内訳を見る（9〜11月）';
+    });
+  }
+
   card.appendChild(table);
   return card;
 }
