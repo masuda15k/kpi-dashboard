@@ -580,11 +580,11 @@
   .seg-toggle button { background: none; border: none; color: var(--muted); font-size: 12px; font-weight: 600; padding: 6px 13px; border-radius: 999px; cursor: pointer; font-family: inherit; }
   .seg-toggle button.active { background: var(--accent); color: var(--bg); }
   .seg-toggle button:not(.active):hover { color: var(--text); }
-  .funnel-row { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding-bottom: 6px; }
+  .funnel-row { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding-bottom: 6px; flex: 1; min-height: 46px; }
   .funnel-stage { flex: 1 0 88px; min-width: 88px; text-align: center; position: relative; padding: 0 4px; }
   .funnel-stage .n { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .funnel-stage .l { font-size: 10.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
-  .funnel-bar-wrap { height: 46px; display: flex; align-items: flex-end; justify-content: center; margin: 8px 0 6px; }
+  .funnel-bar-wrap { flex: 1; min-height: 46px; display: flex; align-items: flex-end; justify-content: center; margin: 8px 0 6px; }
   .funnel-bar { width: 60%; border-radius: 4px 4px 0 0; background: var(--accent); min-height: 3px; }
   .funnel-arrow { flex: 0 0 32px; display: flex; align-items: center; justify-content: center; position: relative; top: -18px; }
   .funnel-arrow .pct { font-size: 10.5px; font-weight: 700; color: var(--muted); white-space: nowrap; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); }
@@ -616,6 +616,56 @@
   .deal-open { flex: 0 0 auto; display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--accent-dark); }
   .deal-open svg { width: 12px; height: 12px; }
   .deals-empty { padding: 16px 4px; color: var(--muted); font-size: 12.5px; }
+
+  /* ── 結果の完了タブ：ミッションコントロール型グリッド（2026-09-08）
+     カード単体のデザインは既存を流用し、配置だけを12列グリッドにまとめて1画面で見渡せるようにする ── */
+  .mc-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; align-items: stretch; margin-bottom: 14px; }
+  .mc-grid .kpi-summary-card { grid-column: span 4; margin: 0; }
+  .mc-grid .funnel-card { grid-column: span 8; grid-row: span 2; margin: 0; display: flex; flex-direction: column; }
+  .mc-grid .deals-card { grid-column: span 4; grid-row: span 2; margin: 0; display: flex; flex-direction: column; max-height: 360px; overflow-y: auto; }
+  .mc-grid .memo-card { grid-column: span 4; margin: 0; max-height: 260px; overflow-y: auto; }
+  @media (max-width: 900px) {
+    .mc-grid .kpi-summary-card, .mc-grid .funnel-card, .mc-grid .deals-card, .mc-grid .memo-card, .mc-grid .activity-card, .mc-grid .report-card { grid-column: 1 / -1; }
+  }
+
+  /* ネクストアクション：数字カードより上位。1〜2件、根拠つきで表示する */
+  .next-action { background: linear-gradient(120deg, var(--accent-tint), transparent 65%); border: 1px solid var(--accent); border-radius: var(--radius); padding: 12px 18px; margin-bottom: 14px; display: flex; gap: 24px; align-items: baseline; flex-wrap: wrap; }
+  .next-action .eyebrow { font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); flex: 0 0 auto; }
+  .next-action ul { margin: 0; padding: 0; list-style: none; display: flex; gap: 26px; flex-wrap: wrap; flex: 1; }
+  .next-action li { display: flex; align-items: baseline; gap: 7px; font-size: 12.5px; }
+  .next-action .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
+  .next-action .why { color: var(--muted-2); font-size: 11px; }
+  .next-action.ok { border-color: var(--good); background: linear-gradient(120deg, var(--good-tint), transparent 65%); }
+  .next-action.ok .eyebrow, .next-action.ok .dot { color: var(--good); background: var(--good); }
+
+  /* 直近の活動：分析■6（商談分析）から会社名つきで最新順に表示。ミッションコントロール的な「動いている感」を出す */
+  .activity-card { grid-column: span 4; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 14px 18px 10px; max-height: 360px; overflow-y: auto; }
+  .activity-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 10px; }
+  .activity-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+  .activity-row:first-of-type { border-top: none; }
+  .activity-rank { font-size: 10px; font-weight: 800; width: 20px; height: 20px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .activity-rank.rank-a, .activity-rank.rank-b { background: var(--good-tint); color: var(--good); }
+  .activity-rank.rank-c { background: var(--warning-tint); color: var(--warning); }
+  .activity-rank.rank-d { background: var(--critical-tint); color: var(--critical); }
+  .activity-main { flex: 1; min-width: 0; }
+  .activity-main .company { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .activity-main .meta { font-size: 10.5px; color: var(--muted-2); }
+  .activity-date { font-size: 10.5px; color: var(--muted-2); flex: 0 0 auto; white-space: nowrap; }
+
+  /* 週次トレンド（ファネルカード内の小さな折れ線） */
+  .trend-strip { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); flex: 0 0 auto; }
+  .trend-strip .lab { font-size: 10.5px; color: var(--muted-2); margin-bottom: 4px; }
+  .trend-strip svg { display: block; width: 100%; height: 40px; }
+
+  /* 日報・週報・月報：数字だけの入口カードにして、開くと既存の入力フォームを下に展開する */
+  .report-card { grid-column: span 4; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 14px 18px; display: flex; flex-direction: column; }
+  .report-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 8px; }
+  .report-card .row { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; padding: 4px 0; }
+  .report-card .row b { font-variant-numeric: tabular-nums; }
+  .report-open-btn { margin-top: auto; background: var(--accent-tint); border: 1px solid var(--accent); color: var(--accent-dark); font-size: 12px; font-weight: 700; padding: 8px 0; border-radius: 8px; text-align: center; cursor: pointer; font-family: inherit; }
+  .report-open-btn:hover { background: var(--accent); color: var(--bg); }
+  #kekkaReportDetail { display: none; }
+  #kekkaReportDetail.open { display: block; }
 
   /* ── 結果の完了タブ最下部：自由メモ（スプシ「メモ」タブのミラー表示） ── */
   .memo-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-glass); padding: 14px 18px 16px; margin-top: 12px; }
@@ -1041,21 +1091,22 @@
   <!-- ログイン完了までタブの中身が下に透けて見えないよう、まとめて隠す -->
   <div id="tabPanels" style="display:none;">
     <div id="panel-kekka" class="tab-panel active">
-      <!-- 評価項目（新規獲得件数／P2コンサル部提案提供数／商談実施数）の結果/目標/不足/達成率サマリー -->
-      <div id="kekkaSummary"></div>
-      <!-- 歩留まりファネル（全体／役職セグメント別／起因・受領別）＋対応が必要な案件（SFリンク付き） -->
-      <div id="kekkaFunnel"></div>
-      <!-- L3：結果の完了タブの中だけの切替（日報/週報/月報） -->
-      <div class="seg kseg" id="kekkaSeg">
-        <button class="kseg-btn active" data-ksub="daily">日報</button>
-        <button class="kseg-btn" data-ksub="weekly">週報</button>
-        <button class="kseg-btn" data-ksub="monthly" id="ksegBtnMonthly">月報</button>
+      <!-- ネクストアクション：数字より上位。事実（在庫・ペース遅れ）から機械的に抽出した1〜2件 -->
+      <div id="kekkaNextAction"></div>
+      <!-- ミッションコントロール型グリッド：評価項目3枚／歩留まりファネル／対応が必要な案件／
+           直近の活動／メモ／日報週報月報の入口を1画面で見渡せるようまとめて配置 -->
+      <div id="kekkaGrid" class="mc-grid"></div>
+      <!-- 日報・週報・月報：既定は数字だけの入口。開くと下に既存の入力フォーム一式を展開する -->
+      <div id="kekkaReportDetail">
+        <div class="seg kseg" id="kekkaSeg">
+          <button class="kseg-btn active" data-ksub="daily">日報</button>
+          <button class="kseg-btn" data-ksub="weekly">週報</button>
+          <button class="kseg-btn" data-ksub="monthly" id="ksegBtnMonthly">月報</button>
+        </div>
+        <div id="ksub-daily" class="sub-panel active"></div>
+        <div id="ksub-weekly" class="sub-panel"></div>
+        <div id="ksub-monthly" class="sub-panel"></div>
       </div>
-      <div id="ksub-daily" class="sub-panel active"></div>
-      <div id="ksub-weekly" class="sub-panel"></div>
-      <div id="ksub-monthly" class="sub-panel"></div>
-      <!-- 自由メモ：スプレッドシートの「メモ」タブをそのまま表示（自動更新の対象外・自由編集用） -->
-      <div id="kekkaMemo"></div>
     </div>
     <div id="panel-pastresults" class="tab-panel"></div>
     <div id="panel-analysis" class="tab-panel">
@@ -1404,7 +1455,7 @@ function inputValuesFrom(parsed) {
 }
 
 // ── 画面全体の再描画 ────────────────────────────────
-// 'kekka'（結果の完了）はここに含めない：中身はksub-*・kekkaSummaryの子要素にあり、
+// 'kekka'（結果の完了）はここに含めない：中身はksub-*・kekkaGrid等の子要素にあり、
 // 親ごとinnerHTML=''で消すと子要素(ksub-daily等)ごと消えてしまい、
 // 直後のKSUB_IDSループがgetElementById(null)で例外になる（panel-analysisと同じ理由で除外）
 const PANEL_IDS = ['pastresults'];
@@ -1428,21 +1479,15 @@ async function renderCurrentView() {
   PANEL_IDS.forEach(id => { document.getElementById('panel-' + id).innerHTML = ''; });
   SUB_IDS.forEach(id => { document.getElementById('sub-' + id).innerHTML = ''; });
   KSUB_IDS.forEach(id => { document.getElementById('ksub-' + id).innerHTML = ''; });
-  document.getElementById('kekkaSummary').innerHTML = '';
-  document.getElementById('kekkaFunnel').innerHTML = '';
-  document.getElementById('kekkaMemo').innerHTML = '';
+  document.getElementById('kekkaNextAction').innerHTML = '';
+  document.getElementById('kekkaGrid').innerHTML = '';
 
   const own = parseSheet(sheets[sheet] || []);
   const analysis = parseSheet(sheets[SHEET_ANALYSIS] || []);
 
-  // 結果の完了タブ最上部：評価項目（新規獲得件数／P2コンサル部提案提供数／商談実施数）の結果/目標/不足/達成率
-  renderKpiSummary(document.getElementById('kekkaSummary'), own);
-
-  // 歩留まりファネル（全体／役職セグメント別／起因・受領別の切替）＋対応が必要な案件（SFリンク付き）
-  renderKpiFunnel(document.getElementById('kekkaFunnel'), own, analysis);
-
-  // 自由メモ：スプシの「メモ」タブをそのまま表示（自動生成の対象外。スプシ本体を直接編集してもらう）
-  renderKekkaMemo(document.getElementById('kekkaMemo'), sheets[SHEET_MEMO] || []);
+  // 結果の完了タブ：ミッションコントロール型グリッド（ネクストアクション→評価項目3枚→
+  // 歩留まりファネル＋対応が必要な案件→直近の活動・メモ・日報週報月報の入口）
+  renderKekkaHome(document.getElementById('kekkaNextAction'), document.getElementById('kekkaGrid'), own, analysis, sheets[SHEET_MEMO] || []);
 
   // 結果の完了（日報・週報・月報を1タブにまとめ、内部でL3切替）：入力欄＋スプシ側で生成済みの報告文
   renderReportPanel('daily', sheet, own);
@@ -1459,9 +1504,7 @@ async function renderCurrentView() {
   PANEL_IDS.forEach(id => reveal(document.getElementById('panel-' + id)));
   SUB_IDS.forEach(id => reveal(document.getElementById('sub-' + id)));
   KSUB_IDS.forEach(id => reveal(document.getElementById('ksub-' + id)));
-  reveal(document.getElementById('kekkaSummary'));
-  reveal(document.getElementById('kekkaFunnel'));
-  reveal(document.getElementById('kekkaMemo'));
+  reveal(document.getElementById('kekkaGrid'));
   hideStatus();
 }
 
@@ -2529,10 +2572,8 @@ function renderKpiSummary(root, parsed) {
   });
   if (!blocks.length) return;
 
-  const wrap = document.createElement('div');
-  wrap.className = 'kpi-summary';
-  blocks.forEach(b => wrap.appendChild(buildKpiSummaryCard(b)));
-  root.appendChild(wrap);
+  // ミッションコントロール型グリッド（mc-grid）の直接の子にする＝カード自体がgrid-column:span 4を持つ
+  blocks.forEach(b => root.appendChild(buildKpiSummaryCard(b)));
 }
 
 function buildKpiSummaryCard(block) {
@@ -2704,6 +2745,24 @@ function renderKpiFunnel(root, own, analysis) {
     card.appendChild(legend);
   }
 
+  // 週次の架電数推移（分析■3）。参考画面にあった折れ線・棒グラフ相当を、実データで簡易に再現
+  const trendSec = findSection(analysis, t => t.startsWith('■3.'));
+  if (trendSec) {
+    const trows = dataRowsOf(trendSec).slice(1);
+    if (trows.length) {
+      const weeks = trows.map(r => r[0]);
+      const kadenVals = trows.map(r => Number(r[1]) || 0);
+      const strip = document.createElement('div');
+      strip.className = 'trend-strip';
+      const lab = document.createElement('div');
+      lab.className = 'lab';
+      lab.textContent = `週次架電数の推移（${weeks[0]}〜${weeks[weeks.length - 1]}）`;
+      strip.appendChild(lab);
+      strip.insertAdjacentHTML('beforeend', buildMiniBarChart(kadenVals));
+      card.appendChild(strip);
+    }
+  }
+
   function buildBreakdownTable(block) {
     const wrap = document.createElement('div');
     wrap.className = 'breakdown active';
@@ -2790,6 +2849,7 @@ function renderKpiFunnel(root, own, analysis) {
       const c = document.createElement('div');
       c.className = 'company';
       c.textContent = d.company;
+      c.title = d.company;
       const m = document.createElement('div');
       m.className = 'meta';
       m.textContent = `担当：${d.owner || '-'}`;
@@ -2859,6 +2919,201 @@ function renderKekkaMemo(root, rows) {
       }
     });
   }
+  root.appendChild(card);
+}
+
+// 値の配列から簡易な棒スパークラインSVGを組み立てる（参考画面の折れ線/棒グラフ要素の簡易版）
+function buildMiniBarChart(values) {
+  const w = 300, h = 40, gap = 3;
+  const max = Math.max(1, ...values);
+  const barW = (w - gap * (values.length + 1)) / Math.max(1, values.length);
+  let bars = '';
+  values.forEach((v, i) => {
+    const bh = Math.max(2, Math.round((v / max) * (h - 8)));
+    const x = gap + i * (barW + gap);
+    const y = h - bh;
+    const isLast = i === values.length - 1;
+    bars += `<rect x="${x.toFixed(1)}" y="${y}" width="${barW.toFixed(1)}" height="${bh}" rx="2" fill="var(--accent)" opacity="${isLast ? 1 : 0.5}"></rect>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${bars}</svg>`;
+}
+
+// ── 直近の活動：分析■6（商談分析）から会社名つきで最新順に表示。数字だけでなく
+//    実際に動いている案件名が見えるようにする（2026-09-08指摘：企業名が出てこない） ──
+function renderRecentActivity(root, analysis) {
+  const sec = findSection(analysis, t => t.startsWith('■6.'));
+  const card = document.createElement('div');
+  card.className = 'activity-card';
+  const h = document.createElement('h3');
+  h.textContent = '直近の活動（商談分析）';
+  card.appendChild(h);
+
+  const rows = sec ? dataRowsOf(sec).slice(1) : [];
+  if (!rows.length) {
+    const empty = document.createElement('div');
+    empty.className = 'deals-empty';
+    empty.textContent = 'まだ採点済みの商談がありません。';
+    card.appendChild(empty);
+    root.appendChild(card);
+    return;
+  }
+  // 日付降順（同日ならシート順）に並べ、直近8件だけ見せる
+  const sorted = rows.slice().sort((a, b) => String(b[2] || '').localeCompare(String(a[2] || '')));
+  sorted.slice(0, 8).forEach(r => {
+    const [owner, company, date, rank] = r;
+    const row = document.createElement('div');
+    row.className = 'activity-row';
+    const badge = document.createElement('span');
+    const rk = String(rank || '').trim().toUpperCase();
+    badge.className = 'activity-rank rank-' + (['A', 'B', 'C', 'D'].includes(rk) ? rk.toLowerCase() : 'c');
+    badge.textContent = rk || '-';
+    const main = document.createElement('div');
+    main.className = 'activity-main';
+    const c = document.createElement('div');
+    c.className = 'company';
+    c.textContent = company || '';
+    c.title = company || '';
+    const m = document.createElement('div');
+    m.className = 'meta';
+    m.textContent = `担当：${owner || '-'}`;
+    main.append(c, m);
+    const d = document.createElement('span');
+    d.className = 'activity-date';
+    d.textContent = fmtCell(date);
+    row.append(badge, main, d);
+    card.appendChild(row);
+  });
+  root.appendChild(card);
+}
+
+// ── ネクストアクション：■KPI・■FUNNELの実数値から機械的に抽出する（2件まで）。
+//    「事実→行動」を数字より上に置くのがGOALS.mdの核。結論だけでなく根拠も併記し、
+//    ルールも単純な比較のみに留めて説明可能にする（AIによるブラックボックス判定はしない） ──
+function computeNextActions(own) {
+  const actions = [];
+
+  const funnelSec = findSection(own, t => t.startsWith('■FUNNEL'));
+  if (funnelSec) {
+    const frows = dataRowsOf(funnelSec);
+    const stockHeader = frows[2] || [];
+    const stockValues = (frows[3] || []).map(v => Number(v) || 0);
+    const p2WaitIdx = stockHeader.findIndex(h => String(h).includes('P2提案待ち'));
+    const p2Wait = p2WaitIdx >= 0 ? stockValues[p2WaitIdx] : 0;
+
+    const kpiSec = findSection(own, t => t.startsWith('■KPI'));
+    if (kpiSec && p2Wait > 0) {
+      const krows = dataRowsOf(kpiSec);
+      const closeBlockIdx = krows.findIndex(r => r[0] === '新規獲得件数' && r[1] === '結果');
+      const closeQResult = closeBlockIdx >= 0 ? Number(krows[closeBlockIdx + 1]?.[1]) || 0 : null;
+      if (closeQResult === 0) {
+        actions.push({
+          headline: `P2提案待ちの在庫が${p2Wait}件たまっています。新規獲得はまだ0件です`,
+          why: `根拠：P2提案待ち在庫${p2Wait}件（在庫消化が進んでいない可能性）`,
+        });
+      }
+    }
+  }
+
+  const kpiSec = findSection(own, t => t.startsWith('■KPI'));
+  if (kpiSec) {
+    const krows = dataRowsOf(kpiSec);
+    const paceRows = [];
+    krows.forEach((r, i) => {
+      if (r[0] === '対営業日進捗') {
+        // 直前の見出し行（結果/目標/不足/達成率）から指標名を辿る
+        let label = '';
+        for (let j = i; j >= 0; j--) { if (krows[j][1] === '結果') { label = krows[j][0]; break; } }
+        const result = Number(r[1]) || 0, target = Number(r[2]) || 0;
+        const rate = parseFloat(String(r[4]).replace('%', ''));
+        if (label && isFinite(rate)) paceRows.push({ label, result, target, rate });
+      }
+    });
+    // targetが四捨五入で0になる早期四半期の指標（例：新規獲得の目標が0件表示）は
+    // 比較対象として意味がないため除外する
+    const worst = paceRows.filter(p => p.target >= 1).sort((a, b) => a.rate - b.rate)[0];
+    if (worst && worst.rate < 90) {
+      actions.push({
+        headline: `${worst.label}が対営業日ペースより遅れています（${worst.rate}%）`,
+        why: `根拠：対営業日進捗＝結果${worst.result}件／本来${worst.target}件`,
+      });
+    }
+  }
+
+  return actions.slice(0, 2);
+}
+
+function renderNextAction(root, own) {
+  const actions = computeNextActions(own);
+  const band = document.createElement('div');
+  if (!actions.length) {
+    band.className = 'next-action ok';
+    band.innerHTML = '<span class="eyebrow">ネクストアクション</span><span style="font-size:12.5px;">現在、対営業日ペースの遅れや在庫の滞留は検知されていません。</span>';
+  } else {
+    band.className = 'next-action';
+    const eyebrow = document.createElement('span');
+    eyebrow.className = 'eyebrow';
+    eyebrow.textContent = 'ネクストアクション';
+    band.appendChild(eyebrow);
+    const ul = document.createElement('ul');
+    actions.forEach(a => {
+      const li = document.createElement('li');
+      const dot = document.createElement('span'); dot.className = 'dot';
+      const text = document.createTextNode(a.headline + ' ');
+      const why = document.createElement('span'); why.className = 'why'; why.textContent = a.why;
+      li.append(dot, text, why);
+      ul.appendChild(li);
+    });
+    band.appendChild(ul);
+  }
+  root.appendChild(band);
+}
+
+// ── 結果の完了タブ全体のオーケストレーター：ネクストアクション帯＋ミッションコントロール型グリッド ──
+function renderKekkaHome(nextActionRoot, gridRoot, own, analysis, memoRows) {
+  renderNextAction(nextActionRoot, own);
+  renderKpiSummary(gridRoot, own);
+  renderKpiFunnel(gridRoot, own, analysis);
+  renderRecentActivity(gridRoot, analysis);
+  renderKekkaMemo(gridRoot, memoRows);
+  renderReportCard(gridRoot, own);
+}
+
+// ── 日報・週報・月報：数字だけの入口カード。開くと#kekkaReportDetail（既存フォーム一式）を展開する ──
+function renderReportCard(root, own) {
+  const card = document.createElement('div');
+  card.className = 'report-card';
+  const h = document.createElement('h3');
+  h.textContent = '日報・週報・月報';
+  card.appendChild(h);
+
+  const kpiSec = findSection(own, t => t.startsWith('■KPI'));
+  if (kpiSec) {
+    const krows = dataRowsOf(kpiSec);
+    ['商談実施数', 'P2コンサル部提案提供数', '新規獲得件数'].forEach(label => {
+      const headIdx = krows.findIndex(r => r[0] === label && r[1] === '結果');
+      if (headIdx < 0) return;
+      const weekRow = krows[headIdx + 2]; // 3Q, 今週 の順
+      if (!weekRow) return;
+      const row = document.createElement('div');
+      row.className = 'row';
+      const span = document.createElement('span'); span.textContent = `今週の${label}`;
+      const b = document.createElement('b'); b.textContent = `${weekRow[1]}/${weekRow[2]}`;
+      row.append(span, b);
+      card.appendChild(row);
+    });
+  }
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'report-open-btn';
+  btn.textContent = '日報・週報・月報を開く';
+  btn.addEventListener('click', () => {
+    const detail = document.getElementById('kekkaReportDetail');
+    const open = detail.classList.toggle('open');
+    btn.textContent = open ? '閉じる' : '日報・週報・月報を開く';
+    if (open) detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  card.appendChild(btn);
   root.appendChild(card);
 }
 
