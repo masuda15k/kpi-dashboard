@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1係 KPIダッシュボード</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  /* ══════════════════════════════════════════════════════════════════
+     デザイントークン：2026-09リブランディング準拠
+     Shikigaku_template_v2.pptx のテーマカラーをそのまま使う
+     dk2 #101D32 / lt2 #E6EAE3 / accent1 #649A5B / accent3 #E60020
+     accent4 #FFC800 / accent6 #64C0AB / hlink #7ECEF4 / 書体=游ゴシック
+     参考画面の多色ネオンは採用しない（アクセントは青緑1色＋明青を数値強調に限定し、
+     緑黄赤は状態表示専用。GOALS.mdの「一貫性」の原則）
+     ══════════════════════════════════════════════════════════════════ */
+  :root {
+    color-scheme: dark;
+    --brand-navy: #101D32;
+    --bg: #080f1c;
+    --card: #101D32;
+    --card-2: #16253c;
+    --border: rgba(126,206,244,.14);
+    --border-2: rgba(126,206,244,.30);
+    --text: #E6EAE3;
+    --muted: #93a8c0;
+    --muted-2: #61758d;
+    --accent: #64C0AB;
+    --accent-tint: rgba(100,192,171,.14);
+    --accent-glow: rgba(100,192,171,.45);
+    --accent-2: #7ECEF4;
+    --good: #649A5B;      --good-tint: rgba(100,154,91,.16);
+    --warning: #FFC800;   --warning-tint: rgba(255,200,0,.14);
+    --critical: #E60020;  --critical-tint: rgba(230,0,32,.16);
+    --track: rgba(126,206,244,.10);
+    --radius: 10px;
+    --shadow: 0 1px 0 0 rgba(230,234,227,.06) inset, 0 8px 20px rgba(0,0,0,.4);
+    --font: "Yu Gothic", "游ゴシック", "Hiragino Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+    --sidebar-w: 208px;
+  }
+  * { box-sizing: border-box; }
+  /* スクロールしないことを構造で担保する。はみ出しは各カード内で吸収 */
+  html, body { height: 100%; overflow: hidden; margin: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; }
+
+  /* ── ログインゲート：全画面を覆う（背後のカードを透けさせない） ── */
+  #loginGate {
+    position: fixed; inset: 0; z-index: 50;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 32px;
+  }
+  #loginGate .mark {
+    width: 56px; height: 56px; margin: 0 auto 22px; border-radius: 10px;
+    background: var(--text); color: var(--brand-navy);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; letter-spacing: -.02em;
+  }
+  #loginGate h2 { font-size: 19px; font-weight: 700; margin: 0 0 10px; letter-spacing: .02em; }
+  #loginGate p { color: var(--muted); font-size: 12.5px; line-height: 1.8; margin: 0 0 26px; }
+  #loginGate .tagline { color: var(--muted-2); font-size: 11px; margin-top: 30px; letter-spacing: .04em; }
+  #signInBtn {
+    background: var(--accent); border: none; color: var(--brand-navy);
+    font-size: 13px; font-weight: 700; padding: 10px 28px; border-radius: 8px; cursor: pointer;
+  }
+  #signInBtn:hover { background: #7bd0bc; }
+
+  #toast {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 40;
+    background: var(--card-2); border: 1px solid var(--border-2); border-radius: 999px;
+    color: var(--muted); font-size: 11.5px; padding: 6px 18px; display: none;
+    box-shadow: 0 8px 20px rgba(0,0,0,.5);
+  }
+  #toast.error { color: var(--critical); border-color: rgba(230,0,32,.4); }
+
+  /* ══ シェル：左サイドバー＋メイン（100vh固定） ══ */
+  .app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; height: 100vh; }
+
+  .sidebar {
+    background: var(--card); border-right: 1px solid var(--border);
+    padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 15px; overflow: hidden;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; }
+  .brand .mark {
+    width: 30px; height: 30px; border-radius: 6px; flex: 0 0 auto;
+    background: var(--text); color: var(--brand-navy);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 700; letter-spacing: -.02em;
+  }
+  .brand .name { font-size: 12.5px; font-weight: 700; line-height: 1.25; }
+  .brand .sub { font-size: 9.5px; color: var(--muted-2); letter-spacing: .06em; }
+
+  .clock .t { font-size: 21px; font-weight: 700; color: var(--accent-2); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .clock .d { font-size: 10px; color: var(--muted-2); letter-spacing: .04em; }
+
+  .side-label { font-size: 9.5px; font-weight: 700; letter-spacing: .12em; color: var(--muted-2); margin-bottom: 6px; }
+  .side-list { display: flex; flex-direction: column; gap: 2px; }
+  .member-btn {
+    position: relative; background: none; border: none; color: var(--muted);
+    font-size: 12px; font-weight: 600; text-align: left;
+    padding: 7px 10px 7px 14px; border-radius: 6px; cursor: pointer;
+  }
+  .member-btn:hover { color: var(--text); background: rgba(126,206,244,.06); }
+  .member-btn.active { color: var(--text); background: rgba(126,206,244,.10); }
+  .member-btn.active::before {
+    content: ''; position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 14px; border-radius: 999px;
+    background: var(--accent); box-shadow: 0 0 6px var(--accent-glow);
+  }
+
+  .side-foot { margin-top: auto; border-top: 1px solid var(--border); padding-top: 10px; }
+  .meter { margin-bottom: 9px; }
+  .meter .row { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted-2); margin-bottom: 3px; }
+  .meter .row b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .meter .bar { height: 4px; background: var(--track); border-radius: 999px; overflow: hidden; }
+  .meter .bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .side-user { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .side-user .avatar {
+    width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto;
+    background: var(--accent-tint); color: var(--accent);
+    display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700;
+  }
+  #signOutBtn { background: none; border: none; color: var(--muted-2); font-size: 10px; cursor: pointer; padding: 0; text-decoration: underline dotted; margin-top: 6px; }
+  #signOutBtn:hover { color: var(--critical); }
+
+  .main { display: grid; grid-template-rows: auto 1fr; min-height: 0; overflow: hidden; }
+  .main-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 9px 14px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(126,206,244,.05), transparent);
+  }
+  .main-bar h1 { font-size: 13px; font-weight: 700; margin: 0; letter-spacing: .02em; }
+  .main-bar .meta { font-size: 10.5px; color: var(--muted-2); display: flex; gap: 16px; }
+  .main-bar .meta b { color: var(--muted); font-weight: 700; }
+
+  /* ══ カードグリッド：12列×3行で残り高さを埋める ══ */
+  .grid {
+    display: grid; grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: 1fr 1.15fr 0.9fr;
+    gap: 10px; padding: 10px 12px; min-height: 0; overflow: hidden;
+  }
+  /* 行スパンは使わない（v1で行高が過剰確保される不具合を踏んだため） */
+  .grid > * { min-height: 0; max-height: 100%; overflow-y: auto; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 11px 13px; display: flex; flex-direction: column;
+  }
+  .card > h3 {
+    font-size: 12px; font-weight: 700; margin: 0 0 1px;
+    display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  }
+  .card > h3::before {
+    content: ''; width: 5px; height: 5px; border-radius: 50%; flex: 0 0 auto;
+    background: var(--accent); box-shadow: 0 0 5px var(--accent-glow);
+  }
+  .card.warn > h3::before { background: var(--warning); box-shadow: 0 0 5px rgba(255,200,0,.5); }
+  .card .sub { font-size: 10px; color: var(--muted-2); margin-bottom: 7px; flex: 0 0 auto; }
+  .card > h3 .count { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--warning); background: var(--warning-tint); padding: 1px 7px; border-radius: 999px; }
+  .card .empty { color: var(--muted); font-size: 11px; padding: 8px 2px; display: flex; align-items: flex-start; gap: 6px; }
+  .card .empty::before { content: '✓'; color: var(--good); font-weight: 700; }
+  .card .empty.info::before { content: 'i'; color: var(--accent-2); font-style: italic; }
+
+  /* ネクストアクション */
+  .next { grid-column: span 3; border-color: var(--accent); background: linear-gradient(150deg, var(--accent-tint), transparent 70%); }
+  .next.ok { border-color: var(--good); background: linear-gradient(150deg, var(--good-tint), transparent 70%); }
+  .next .eyebrow { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; color: var(--accent); flex: 0 0 auto; }
+  .next.ok .eyebrow { color: var(--good); }
+  .next ul { margin: 9px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .next li { display: flex; gap: 7px; font-size: 12px; line-height: 1.5; }
+  .next .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; margin-top: 6px; box-shadow: 0 0 6px var(--accent-glow); }
+  .next.ok .dot { background: var(--good); box-shadow: none; }
+  .next .why { display: block; color: var(--muted-2); font-size: 10.5px; margin-top: 2px; }
+
+  /* 評価項目カード */
+  .kpi { grid-column: span 3; }
+  .kpi .conv { font-size: 10px; font-weight: 700; color: var(--accent-2); white-space: nowrap; }
+  .kpi .head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+  .kpi table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; margin-top: 4px; }
+  .kpi td { padding: 2px 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* 「対営業日進捗」が入る幅を確保する（狭いと省略記号で切れる） */
+  .kpi td:first-child { width: 40%; color: var(--muted); font-size: 11px; }
+  .kpi td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; width: 15%; }
+  .kpi td:last-child { text-align: center; }
+  .kpi tr.hd td { font-size: 9.5px; color: var(--muted-2); font-weight: 700; letter-spacing: .04em; }
+  .kpi tr.emph td { font-weight: 700; color: var(--text); }
+  .kpi tr.pace td { background: var(--card-2); }
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--track); color: var(--muted); }
+  .badge.good { background: var(--good-tint); color: var(--good); }
+  .badge.warning { background: var(--warning-tint); color: var(--warning); }
+  .badge.critical { background: var(--critical-tint); color: var(--critical); }
+  .more-btn { background: none; border: none; color: var(--muted-2); font-size: 10px; font-weight: 600; cursor: pointer; padding: 3px 0 0; text-decoration: underline dotted; align-self: flex-start; }
+  .more-btn:hover { color: var(--accent); }
+
+  /* 歩留まりファネル */
+  .funnel { grid-column: span 6; }
+  .funnel .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; flex: 0 0 auto; }
+  .seg { display: flex; background: var(--card-2); border-radius: 999px; padding: 2px; gap: 2px; }
+  .seg button { background: none; border: none; color: var(--muted); font-size: 10px; font-weight: 600; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
+  .seg button.active { background: var(--accent); color: var(--brand-navy); }
+  .seg button:not(.active):hover { color: var(--text); }
+  .stages { display: flex; flex: 1; min-height: 54px; overflow-x: auto; }
+  .stage { flex: 1 0 52px; min-width: 52px; text-align: center; display: flex; flex-direction: column; padding: 0 1px; }
+  .stage .n { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+  .stage .l { font-size: 9px; color: var(--muted); white-space: nowrap; flex: 0 0 auto; margin-top: 1px; }
+  .stage .barwrap { flex: 1; min-height: 20px; display: flex; align-items: flex-end; justify-content: center; margin: 3px 0; }
+  .stage .bar { width: 62%; min-height: 3px; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, var(--accent-2), var(--accent)); box-shadow: 0 0 8px var(--accent-glow); }
+  .arrow { flex: 0 0 20px; display: flex; align-items: flex-start; justify-content: center; padding-top: 20px; }
+  .arrow .pct { font-size: 9px; font-weight: 700; color: var(--muted-2); }
+  .arrow .pct.low { color: var(--critical); }
+  .stock { display: flex; gap: 11px; font-size: 9.5px; color: var(--muted-2); margin-top: 5px; flex-wrap: wrap; flex: 0 0 auto; }
+  .stock b { color: var(--text); }
+  .bd { border-top: 1px solid var(--border); margin-top: 7px; padding-top: 7px; flex: 0 0 auto; }
+  .bd .note { font-size: 9.5px; color: var(--muted-2); margin-bottom: 5px; }
+  .bd table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .bd td { padding: 4px 5px; border-bottom: 1px solid var(--border); }
+  .bd tr:last-child td { border-bottom: none; }
+  .bd tr.hd td { font-size: 9px; color: var(--muted-2); font-weight: 700; }
+  .bd td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* 対応が必要な案件 / 直近の活動 */
+  .deals, .activity { grid-column: span 3; }
+  /* 狭い3列カードでも会社名が読めるよう、1行目=タグ+会社名、2行目=担当・状態の2段組みにする */
+  .row-link { display: grid; grid-template-columns: auto 1fr; gap: 2px 7px; padding: 6px 2px; border-top: 1px solid var(--border); text-decoration: none; color: inherit; align-items: center; }
+  .row-link:first-of-type { border-top: none; }
+  .row-link:hover { background: var(--card-2); border-radius: 6px; }
+  .row-link .row-main { grid-column: 2; }
+  .row-link .row-meta { grid-column: 2; font-size: 9.5px; color: var(--muted-2); display: flex; gap: 8px; flex-wrap: wrap; }
+  .row-link .row-meta .em { color: var(--critical); font-weight: 700; }
+  .tag { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 999px; flex: 0 0 auto; white-space: nowrap; }
+  .tag.warn { background: var(--warning-tint); color: var(--warning); }
+  .tag.acc { background: var(--accent-tint); color: var(--accent); }
+  .tag.a { background: var(--good-tint); color: var(--good); }
+  .tag.b { background: var(--accent-tint); color: var(--accent); }
+  .tag.c { background: var(--warning-tint); color: var(--warning); }
+  .tag.d { background: var(--critical-tint); color: var(--critical); }
+  .row-main { flex: 1; min-width: 0; }
+  .row-main .co { font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-main .mt { font-size: 9.5px; color: var(--muted-2); }
+  .row-right { font-size: 10px; font-weight: 700; color: var(--critical); flex: 0 0 auto; }
+  .row-right.mute { color: var(--muted-2); font-weight: 600; }
+
+  /* 週次トレンド */
+  .trend { grid-column: span 4; }
+  .trend .plot { flex: 1; min-height: 40px; display: flex; flex-direction: column; gap: 6px; }
+  .spark { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .spark-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 9.5px; color: var(--muted); flex: 0 0 auto; }
+  .spark-head i { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 4px; }
+  .spark-val { color: var(--muted-2); font-variant-numeric: tabular-nums; }
+  .spark-plot { flex: 1; min-height: 22px; }
+  .spark-plot svg { width: 100%; height: 100%; display: block; }
+  .legend { font-size: 9.5px; color: var(--muted-2); margin-top: 4px; flex: 0 0 auto; }
+
+  /* メモ / 次の約束 */
+  .memo { grid-column: span 4; }
+  .memo table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .memo td { padding: 3px 4px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .memo tr:last-child td { border-bottom: none; }
+  .memo tr:first-child td { color: var(--muted); font-weight: 700; }
+  .promise { grid-column: span 4; }
+  .promise .line { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 2px; border-top: 1px solid var(--border); font-size: 11.5px; }
+  .promise .line:first-of-type { border-top: none; }
+  .promise .line b { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent-2); }
+  .promise .line span { color: var(--muted); }
+
+  @media (max-width: 1100px) {
+    html, body { overflow: auto; }
+    .app { grid-template-columns: 1fr; height: auto; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .grid { grid-template-rows: none; grid-auto-rows: minmax(150px, auto); overflow: visible; }
+    .grid > * { max-height: none; }
+    .next, .kpi, .deals, .activity, .trend, .memo, .promise { grid-column: span 6; }
+    .funnel { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loginGate">
+  <div class="mark">Shiki<br>gaku</div>
+  <h2>1係 KPIダッシュボード</h2>
+  <p>識学Googleアカウントでログインしてください<br>（社外アカウントではログインできません）</p>
+  <button id="signInBtn">Googleでログイン</button>
+  <div class="tagline">迷いがなくなれば、人はもっと成長できる。</div>
+</div>
+
+<div id="toast"></div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">Shiki<br>gaku</div>
+      <div>
+        <div class="name">1係 KPI</div>
+        <div class="sub">DASHBOARD</div>
+      </div>
+    </div>
+
+    <div class="clock">
+      <div class="t" id="clockT">--:--</div>
+      <div class="d" id="clockD">----/--/--</div>
+    </div>
+
+    <div>
+      <div class="side-label">表示対象</div>
+      <div class="side-list" id="memberList">
+        <button class="member-btn active" data-member="">1係全体</button>
+        <button class="member-btn" data-member="菅原">菅原</button>
+        <button class="member-btn" data-member="丸野">丸野</button>
+        <button class="member-btn" data-member="飯山">飯山</button>
+      </div>
+    </div>
+
+    <div class="side-foot">
+      <div class="meter" id="meterQ"></div>
+      <div class="meter" id="meterM"></div>
+      <div class="side-user" id="userBox" style="display:none;">
+        <span class="avatar" id="userAvatar"></span>
+        <span id="userName"></span>
+      </div>
+      <button id="signOutBtn" style="display:none;">ログアウト</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="main-bar">
+      <h1 id="mainTitle">結果の完了</h1>
+      <div class="meta">
+        <span>対象 <b id="metaScope">1係全体</b></span>
+        <span>データ更新 <b id="metaUpdated">—</b></span>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  設定
+// ══════════════════════════════════════════════════════════════════
+const CLIENT_ID = '315650091875-4b15pp0ue46gp6b8e2uitksc5ea5h6g6.apps.googleusercontent.com';
+const SPREADSHEET_ID = '1qHftqur_IDqjc97VnfMopSnMeQj6z5U-m5x68O1Ahkw';
+
+// v2は表示専用なので読み取り専用スコープを第一候補にする。
+// 同意画面に未登録で弾かれた場合は、実績のある spreadsheets へ自動フォールバックする
+const SCOPES = [
+  'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email',
+];
+let scopeIdx = 0;
+
+const SHEET_REPORT = '報告';        // 1係全体の■KPI・■FUNNEL・手入力セル。更新時刻もここのタイトル行から
+const SHEET_ANALYSIS = '分析';      // 滞留案件・データ品質・商談分析・週次の活動相関
+const SHEET_MEMO = 'メモ';          // 自由記入欄（自動生成の対象外）
+// 営業日の期間行（例「Q(9/1〜11/30) 7/59営業日(12%) ／ 9月 7/19日 …」）は
+// 報告タブではなくダッシュボードタブの2行目にしか無いため、サイドバーのメーター用に読む
+const SHEET_DASHBOARD = 'ダッシュボード';
+const MEMBERS = ['菅原', '丸野', '飯山'];
+
+const MEMBER_MAP = {
+  'kazumasasugawara@shikigaku.com': { tab: '菅原', label: '菅原' },
+  'kayomaruno@shikigaku.com':       { tab: '丸野', label: '丸野' },
+  'takahiroiiyama@shikigaku.com':   { tab: '飯山', label: '飯山' },
+  'koumeimasuda@shikigaku.com':     { tab: SHEET_REPORT, label: '増田' },
+};
+
+const AUTO_KEY = 'kpiV2AutoSignIn';
+const REFRESH_MARGIN_SEC = 300;
+
+let tokenClient = null, accessToken = null, myProfile = null;
+let hasSignedIn = false, isAutoAttempt = false, refreshTimer = null;
+let selectedMember = null;           // null＝1係全体
+const cache = {};                    // タブ名 → 行配列
+
+// ══════════════════════════════════════════════════════════════════
+//  小さなヘルパー
+// ══════════════════════════════════════════════════════════════════
+const el = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+};
+const num = v => { const n = Number(String(v ?? '').replace(/[,%]/g, '')); return isFinite(n) ? n : 0; };
+const txt = v => (v === undefined || v === null) ? '' : String(v);
+const toneOfPct = v => {
+  const n = parseFloat(String(v).replace('%', ''));
+  if (!isFinite(n)) return '';
+  return n >= 100 ? 'good' : n >= 70 ? 'warning' : 'critical';
+};
+function toast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'error' : '';
+  t.style.display = 'block';
+}
+const hideToast = () => { document.getElementById('toast').style.display = 'none'; };
+
+// ══════════════════════════════════════════════════════════════════
+//  認証
+// ══════════════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  const wait = setInterval(() => {
+    if (!window.google?.accounts?.oauth2) return;
+    clearInterval(wait);
+    initAuth();
+  }, 80);
+});
+
+function initAuth() {
+  if (location.protocol === 'file:') {
+    document.querySelector('#loginGate p').innerHTML =
+      'このファイルを直接開いてもログインできません。<br>公開ページから開いてください。';
+    document.getElementById('signInBtn').style.display = 'none';
+    return;
+  }
+  buildTokenClient();
+  document.getElementById('signInBtn').onclick = () => tokenClient.requestAccessToken({ prompt: 'consent' });
+  document.getElementById('signOutBtn').onclick = () => {
+    if (accessToken) google.accounts.oauth2.revoke(accessToken, () => {});
+    localStorage.removeItem(AUTO_KEY);
+    location.reload();
+  };
+  if (localStorage.getItem(AUTO_KEY) === '1') {
+    isAutoAttempt = true;
+    toast('自動ログイン中...');
+    tokenClient.requestAccessToken({ prompt: '' });
+  }
+}
+
+function buildTokenClient() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES[scopeIdx],
+    // サードパーティCookieがブロックされていても裏側の自動更新が通るようにする
+    use_fedcm_for_prompt: true,
+    callback: onToken,
+    error_callback: err => {
+      // 読み取り専用スコープが同意画面に未登録だと弾かれるため、一段広いスコープで再試行する
+      if (scopeIdx === 0) {
+        scopeIdx = 1;
+        buildTokenClient();
+        tokenClient.requestAccessToken({ prompt: isAutoAttempt ? '' : 'consent' });
+        return;
+      }
+      if (hasSignedIn) {
+        resetSignedOut();
+        toast('セッションの有効期限が切れました。再度ログインしてください。', true);
+      } else if (isAutoAttempt) {
+        isAutoAttempt = false;
+        hideToast();
+      } else {
+        toast('ログインできませんでした：' + (err?.type || '不明なエラー'), true);
+      }
+    },
+  });
+}
+
+function onToken(resp) {
+  isAutoAttempt = false;
+  if (resp.error) { toast('ログインに失敗しました：' + resp.error, true); return; }
+  accessToken = resp.access_token;
+  localStorage.setItem(AUTO_KEY, '1');
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(
+    () => tokenClient.requestAccessToken({ prompt: '' }),
+    Math.max(10, (Number(resp.expires_in) || 3600) - REFRESH_MARGIN_SEC) * 1000
+  );
+  if (!hasSignedIn) { hasSignedIn = true; completeSignIn(); }
+  else hideToast();
+}
+
+function resetSignedOut() {
+  accessToken = null; hasSignedIn = false;
+  clearTimeout(refreshTimer);
+  localStorage.removeItem(AUTO_KEY);
+  document.getElementById('loginGate').style.display = 'flex';
+}
+
+async function completeSignIn() {
+  document.getElementById('loginGate').style.display = 'none';
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + accessToken },
+    });
+    const user = await res.json();
+    myProfile = MEMBER_MAP[user.email] || null;
+    document.getElementById('userBox').style.display = 'flex';
+    document.getElementById('signOutBtn').style.display = 'block';
+    document.getElementById('userName').textContent = myProfile ? myProfile.label + 'さん' : (user.email || '');
+    document.getElementById('userAvatar').textContent = (myProfile?.label || user.email || '?').charAt(0);
+  } catch (e) {
+    toast('ユーザー情報の取得に失敗しました：' + e.message, true);
+  }
+  // メンバー本人がログインしたら、初期表示はその人自身に絞る
+  if (myProfile && myProfile.tab !== SHEET_REPORT) selectedMember = myProfile.tab;
+  syncMemberButtons();
+  await render();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  データ取得（読み取りのみ。取得済みタブはキャッシュ）
+// ══════════════════════════════════════════════════════════════════
+async function fetchTabs(tabs) {
+  const need = tabs.filter(t => !(t in cache));
+  if (need.length) {
+    const qs = need.map(t => 'ranges=' + encodeURIComponent(t)).join('&');
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchGet?${qs}`;
+    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body?.error?.message || ('HTTP ' + res.status));
+    }
+    const data = await res.json();
+    (data.valueRanges || []).forEach((vr, i) => { cache[need[i]] = vr.values || []; });
+    need.forEach(t => { if (!(t in cache)) cache[t] = []; });
+  }
+  const out = {};
+  tabs.forEach(t => { out[t] = cache[t] || []; });
+  return out;
+}
+
+// 1行目＝タイトル、2行目＝期間、以降は ■/◆ 見出しごとのセクション。
+// 見出しの行番号はタブごとにズレるので、必ず見出し文字列で判定する
+function parseSheet(rows) {
+  const isHead = s => /^[■◆]/.test(s);
+  let i = 0, title = '', period = '';
+  if (rows[0]?.[0] && !isHead(String(rows[0][0]))) { title = String(rows[0][0]); i = 1; }
+  if (rows[1]?.[0] && !isHead(String(rows[1][0]))) { period = String(rows[1][0]); i = 2; }
+  const sections = [];
+  let cur = null;
+  for (; i < rows.length; i++) {
+    const first = rows[i]?.[0] ? String(rows[i][0]) : '';
+    if (isHead(first)) { cur = { title: first, rows: [] }; sections.push(cur); continue; }
+    if (cur) cur.rows.push(rows[i]?.length ? rows[i] : []);
+  }
+  return { title, period, sections };
+}
+// セクションは「どのタブのparsed結果か」を明示して探す。
+// 分析タブとメンバータブでは同じ■n.が別物を指すため、横断検索してはいけない
+const findSec = (parsed, pred) => parsed.sections.find(s => pred(s.title));
+const dataRows = sec => (sec ? sec.rows.filter(r => r && r.length) : []);
+
+// ══════════════════════════════════════════════════════════════════
+//  描画：全体
+// ══════════════════════════════════════════════════════════════════
+async function render() {
+  const isTeam = !selectedMember;
+  const ownTab = selectedMember || SHEET_REPORT;
+  toast('読み込み中...');
+  let sheets;
+  try {
+    // 報告＝更新時刻、ダッシュボード＝営業日の期間行の取得元なので常に読む（2回目以降はキャッシュ）
+    sheets = await fetchTabs([ownTab, SHEET_REPORT, SHEET_DASHBOARD, SHEET_ANALYSIS, SHEET_MEMO]);
+  } catch (e) {
+    toast('データの読み込みに失敗しました：' + e.message, true);
+    return;
+  }
+
+  const own = parseSheet(sheets[ownTab] || []);
+  const report = parseSheet(sheets[SHEET_REPORT] || []);
+  const dash = parseSheet(sheets[SHEET_DASHBOARD] || []);
+  const analysis = parseSheet(sheets[SHEET_ANALYSIS] || []);
+
+  renderShell(report, dash, isTeam);
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  const kpi = readKpi(own);
+  const funnel = readFunnel(own);
+  const deals = readDeals(analysis, selectedMember);
+
+  grid.appendChild(buildNextAction(kpi, funnel, deals));
+  kpi.forEach(b => grid.appendChild(buildKpiCard(b)));
+  grid.appendChild(buildFunnelCard(funnel, analysis));
+  grid.appendChild(buildDealsCard(deals));
+  grid.appendChild(buildActivityCard(analysis, selectedMember));
+  grid.appendChild(buildTrendCard(own, analysis, isTeam));
+  grid.appendChild(buildPromiseCard(own, isTeam));
+  grid.appendChild(buildMemoCard(sheets[SHEET_MEMO] || []));
+
+  hideToast();
+}
+
+// ── サイドバー・メインバー ──
+function renderShell(report, dash, isTeam) {
+  document.getElementById('metaScope').textContent = isTeam ? '1係全体' : selectedMember;
+  const m = String(report.title || '').match(/更新[:：]\s*(.+)$/);
+  document.getElementById('metaUpdated').textContent = m ? m[1] : '—';
+
+  // 期間行の例: 「Q(9/1〜11/30) 6/59営業日(10%) ／ 9月 6/19日 ／ 今週(9/8〜9/12) 1/5日」
+  const p = String(dash.period || '');
+  const q = p.match(/Q\(([^)]+)\)\s*(\d+)\/(\d+)営業日/);
+  const mo = p.match(/(\d+月)\s*(\d+)\/(\d+)日/);
+  document.getElementById('meterQ').innerHTML = q
+    ? meterHtml(`3Q（${q[1]}）`, Number(q[2]), Number(q[3]))
+    : meterHtml('3Q', 0, 0);
+  document.getElementById('meterM').innerHTML = mo
+    ? meterHtml(mo[1], Number(mo[2]), Number(mo[3]))
+    : '';
+}
+function meterHtml(label, done, total) {
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  return `<div class="row"><span>${label}</span><b>${done}/${total}営業日</b></div>
+          <div class="bar"><span style="width:${Math.min(100, pct)}%"></span></div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  読み取り：シート契約に沿って構造化する
+// ══════════════════════════════════════════════════════════════════
+// ■KPI 評価項目サマリー：指標ごとに [指標名,結果,目標,不足,達成率,転換率] の見出し行 → 期間行が続く
+function readKpi(parsed) {
+  const sec = findSec(parsed, t => t.startsWith('■KPI'));
+  const blocks = [];
+  let cur = null;
+  dataRows(sec).forEach(r => {
+    if (r[1] === '結果' && r[2] === '目標' && r[3] === '不足' && r[4] === '達成率') {
+      cur = { title: txt(r[0]), conv: txt(r[5]), rows: [] };
+      blocks.push(cur);
+      return;
+    }
+    if (cur) cur.rows.push(r);
+  });
+  // シートは 新規→P2→商談実施 の順で出力される。画面は商談実施→P2→新規で見せる
+  const order = ['商談実施数', 'P2コンサル部提案提供数', '新規獲得件数'];
+  blocks.sort((a, b) => order.indexOf(a.title) - order.indexOf(b.title));
+  return blocks;
+}
+
+// ■FUNNEL：空行を除くと [段階名10列, 件数10列, 在庫見出し4列, 在庫件数4列]
+function readFunnel(parsed) {
+  const rows = dataRows(findSec(parsed, t => t.startsWith('■FUNNEL')));
+  return {
+    labels: rows[0] || [],
+    values: (rows[1] || []).map(num),
+    stockLabels: rows[2] || [],
+    stockValues: (rows[3] || []).map(num),
+  };
+}
+
+// 分析■4 滞留案件一覧（取引先/担当/フェーズ/滞留日数）＋ 分析■5 データ品質（種別/取引先/担当/予定日/超過営業日/…）
+function readDeals(analysis, member) {
+  const out = [];
+  dataRows(findSec(analysis, t => t.startsWith('■4.'))).slice(1).forEach(r => {
+    if (!r[0] || r[0] === '（該当なし）') return;
+    if (member && !txt(r[1]).includes(member)) return;
+    out.push({ company: txt(r[0]), owner: txt(r[1]), phase: txt(r[2]) || '滞留', right: txt(r[3]) + '滞留', tone: 'warn' });
+  });
+  dataRows(findSec(analysis, t => t.startsWith('■5.'))).slice(1).forEach(r => {
+    if (!r[1] || r[1] === '（該当なし）') return;
+    if (member && !txt(r[2]).includes(member)) return;
+    out.push({
+      company: txt(r[1]), owner: txt(r[2]), phase: txt(r[0]) || '要確認',
+      right: `予定日${txt(r[3])}を${txt(r[4])}営業日超過`, tone: 'acc',
+    });
+  });
+  return out;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  カード：ネクストアクション
+// ══════════════════════════════════════════════════════════════════
+const STOCK_ALERT = 3;   // P2提案待ちが何件たまったら警告とみなすか
+
+function buildNextAction(kpi, funnel, deals) {
+  const card = el('div', 'card next');
+  card.appendChild(el('div', 'eyebrow', 'NEXT ACTION'));
+
+  const items = [];
+  // ① 在庫が積んでいるのに先に進んでいない
+  const stockIdx = funnel.stockLabels.findIndex(l => txt(l).includes('P2提案待ち'));
+  const stockWait = stockIdx >= 0 ? funnel.stockValues[stockIdx] : 0;
+  const closeBlock = kpi.find(b => b.title === '新規獲得件数');
+  const closeQ = closeBlock ? num((closeBlock.rows.find(r => r[0] === '3Q') || [])[1]) : 0;
+  if (stockWait >= STOCK_ALERT && closeQ === 0) {
+    items.push({
+      text: `P2提案待ちが${stockWait}件たまったまま、新規獲得は0件です`,
+      why: `根拠：パイプライン在庫 P2提案待ち${stockWait}件／3Q成約0件`,
+    });
+  }
+  // ② 対営業日ペースが最も遅れている評価項目
+  //    「本来あるべき件数」が0の指標は、遅れようがないので対象外にする
+  //    （例：3Q目標4件・経過7営業日なら按分後の期待値は0件。これを遅れと呼ぶと誤警告になる）
+  const paces = kpi.map(b => {
+    const row = b.rows.find(r => r[0] === '対営業日進捗') || [];
+    return { title: b.title, pct: parseFloat(String(row[4] || '').replace('%', '')), result: txt(row[1]), target: txt(row[2]), expected: num(row[2]) };
+  }).filter(x => isFinite(x.pct) && x.pct < 100 && x.expected > 0).sort((a, b) => a.pct - b.pct);
+  if (paces.length) {
+    const w = paces[0];
+    items.push({
+      text: `${w.title}が対営業日ペースより遅れています（${Math.round(w.pct)}%）`,
+      why: `根拠：対営業日進捗 結果${w.result}件／本来${w.target}件`,
+    });
+  }
+  // ③ 要対応案件が出ている
+  if (!items.length && deals.length) {
+    items.push({ text: `対応が必要な案件が${deals.length}件あります`, why: '根拠：滞留案件一覧・データ品質チェック' });
+  }
+
+  if (!items.length) {
+    card.classList.add('ok');
+    card.appendChild(el('div', 'empty', '評価項目・在庫・滞留案件のいずれも警告水準ではありません'));
+    return card;
+  }
+  const ul = el('ul');
+  items.slice(0, 2).forEach(it => {
+    const li = el('li');
+    li.appendChild(el('span', 'dot'));
+    const body = el('div');
+    body.appendChild(document.createTextNode(it.text));
+    body.appendChild(el('span', 'why', it.why));
+    li.appendChild(body);
+    ul.appendChild(li);
+  });
+  card.appendChild(ul);
+  return card;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  カード：評価項目
+// ══════════════════════════════════════════════════════════════════
+const MONTH_LABELS = ['9月', '10月', '11月'];
+
+function buildKpiCard(block) {
+  const card = el('div', 'card kpi');
+  const head = el('div', 'head');
+  head.appendChild(el('h3', null, block.title));
+  if (block.conv) head.appendChild(el('span', 'conv', block.conv));
+  card.appendChild(head);
+
+  const table = el('table');
+  const hd = el('tr', 'hd');
+  ['期間', '結果', '目標', '不足', '達成率'].forEach(t => hd.appendChild(el('td', null, t)));
+  table.appendChild(hd);
+
+  const mkRow = r => {
+    const tr = el('tr');
+    if (r[0] === '3Q' || r[0] === '今週') tr.className = 'emph';
+    if (r[0] === '対営業日進捗') tr.className = 'pace';
+    r.slice(0, 5).forEach((v, i) => {
+      const td = el('td');
+      if (i === 4) {
+        const b = el('span', 'badge ' + toneOfPct(v), txt(v));
+        td.appendChild(b);
+      } else td.textContent = txt(v);
+      tr.appendChild(td);
+    });
+    return tr;
+  };
+
+  // 1画面に収めるため、月次内訳（9〜11月）は畳んでおく（GOALS.md「詳細は能動的に潜る」）
+  block.rows.filter(r => !MONTH_LABELS.includes(r[0])).forEach(r => table.appendChild(mkRow(r)));
+  const monthly = block.rows.filter(r => MONTH_LABELS.includes(r[0])).map(mkRow);
+  const paceRow = table.querySelector('tr.pace');
+  monthly.forEach(tr => { tr.style.display = 'none'; table.insertBefore(tr, paceRow); });
+  card.appendChild(table);
+
+  if (monthly.length) {
+    const btn = el('button', 'more-btn', '月次内訳を見る');
+    btn.onclick = () => {
+      const open = monthly[0].style.display === 'none';
+      monthly.forEach(tr => { tr.style.display = open ? '' : 'none'; });
+      btn.textContent = open ? '月次内訳を閉じる' : '月次内訳を見る';
+    };
+    card.appendChild(btn);
+  }
+  return card;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  カード：歩留まりファネル
+// ══════════════════════════════════════════════════════════════════
+// 「— 見出し —」で区切られた分析■1の小表を {label, header, rows} に分ける
+function parseDividerBlocks(sec) {
+  const blocks = [];
+  let cur = null;
+  dataRows(sec).forEach(r => {
+    const m = String(r[0] || '').match(/^—\s*(.+?)\s*—$/);
+    if (m) { cur = { label: m[1], header: null, rows: [] }; blocks.push(cur); return; }
+    if (!cur) return;
+    if (!cur.header) { cur.header = r; return; }
+    cur.rows.push(r);
+  });
+  return blocks;
+}
+
+function buildFunnelCard(funnel, analysis) {
+  const card = el('div', 'card funnel');
+  const head = el('div', 'head');
+  head.appendChild(el('h3', null, '歩留まりファネル（Q累計）'));
+
+  const segBlocks = parseDividerBlocks(findSec(analysis, t => t.startsWith('■1.')));
+  const roleBlock = segBlocks.find(b => b.label.includes('役職セグメント'));
+  const srcBlock = segBlocks.find(b => b.label.includes('起点/受領'));
+
+  const seg = el('div', 'seg');
+  const views = [{ k: 'all', l: '全体' }];
+  if (roleBlock) views.push({ k: 'role', l: '役職セグメント別' });
+  if (srcBlock) views.push({ k: 'src', l: '起因・受領別' });
+  views.forEach((v, i) => {
+    const b = el('button', i === 0 ? 'active' : null, v.l);
+    b.dataset.k = v.k;
+    seg.appendChild(b);
+  });
+  head.appendChild(seg);
+  card.appendChild(head);
+  card.appendChild(el('div', 'sub', '率は直前段階に対する割合。前四半期に設定した商談が当四半期に実施されるため100%を超えることがある'));
+
+  if (!funnel.labels.length) {
+    card.appendChild(el('div', 'empty info', 'データが見つかりません（■FUNNEL）'));
+    return card;
+  }
+
+  // 桁が大きく違う（アプローチ数百 vs 成約0〜数件）ため、棒の高さは平方根スケールで圧縮する
+  const stages = el('div', 'stages');
+  const maxRoot = Math.sqrt(Math.max(1, ...funnel.values));
+  funnel.labels.forEach((label, i) => {
+    const v = funnel.values[i] || 0;
+    const st = el('div', 'stage');
+    st.appendChild(el('div', 'n', String(v)));
+    const bw = el('div', 'barwrap');
+    const bar = el('div', 'bar');
+    bar.style.height = Math.max(3, Math.round((Math.sqrt(v) / maxRoot) * 100)) + '%';
+    bw.appendChild(bar);
+    st.appendChild(bw);
+    st.appendChild(el('div', 'l', txt(label)));
+    stages.appendChild(st);
+
+    if (i < funnel.labels.length - 1) {
+      const prev = v, next = funnel.values[i + 1] || 0;
+      const pct = prev > 0 ? Math.round(next / prev * 100) : null;
+      const ar = el('div', 'arrow');
+      ar.appendChild(el('div', 'pct' + (pct !== null && pct < 30 ? ' low' : ''), pct === null ? '−' : pct + '%'));
+      stages.appendChild(ar);
+    }
+  });
+  card.appendChild(stages);
+
+  if (funnel.stockLabels.length) {
+    const stock = el('div', 'stock');
+    funnel.stockLabels.forEach((l, i) => {
+      const s = el('span');
+      s.appendChild(el('b', null, String(funnel.stockValues[i] ?? 0)));
+      s.appendChild(document.createTextNode(' ' + txt(l).replace('在庫：', '')));
+      stock.appendChild(s);
+    });
+    card.appendChild(stock);
+  }
+
+  const holder = el('div');
+  card.appendChild(holder);
+  seg.querySelectorAll('button').forEach(btn => {
+    btn.onclick = () => {
+      seg.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      holder.innerHTML = '';
+      const blk = btn.dataset.k === 'role' ? roleBlock : btn.dataset.k === 'src' ? srcBlock : null;
+      if (blk) holder.appendChild(buildBreakdown(blk));
+    };
+  });
+  return card;
+}
+
+function buildBreakdown(block) {
+  const wrap = el('div', 'bd');
+  if (block.label.includes('役職セグメント')) {
+    wrap.appendChild(el('div', 'note', '役職セグメントはP2到達時に判明するため、分母は n(P2提供)'));
+  }
+  const table = el('table');
+  const hd = el('tr', 'hd');
+  (block.header || []).forEach(h => hd.appendChild(el('td', null, txt(h))));
+  table.appendChild(hd);
+  block.rows.forEach(r => {
+    const tr = el('tr');
+    r.forEach((v, i) => tr.appendChild(el('td', i > 0 ? 'num' : null, txt(v))));
+    table.appendChild(tr);
+  });
+  wrap.appendChild(table);
+  return wrap;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  カード：対応が必要な案件／直近の活動
+// ══════════════════════════════════════════════════════════════════
+const SF_SEARCH = 'https://shikigaku.lightning.force.com/lightning/search/';
+
+function buildDealsCard(deals) {
+  const card = el('div', 'card deals warn');
+  const h = el('h3', null, '対応が必要な案件');
+  // 件数を見出しに出す：カード内スクロールで隠れた分があっても総数が分かるようにする
+  if (deals.length) h.appendChild(el('span', 'count', deals.length + '件'));
+  card.appendChild(h);
+  card.appendChild(el('div', 'sub', 'P3以降30日超の滞留・P2放置／クリックでSF検索'));
+  if (!deals.length) {
+    card.appendChild(el('div', 'empty', '対応が必要な案件はありません'));
+    return card;
+  }
+  deals.forEach(d => {
+    const a = el('a', 'row-link');
+    a.href = SF_SEARCH + encodeURIComponent(d.company);
+    a.target = '_blank'; a.rel = 'noopener';
+    a.appendChild(el('span', 'tag ' + d.tone, d.phase));
+    const main = el('div', 'row-main');
+    main.appendChild(el('div', 'co', d.company));
+    a.appendChild(main);
+    const meta = el('div', 'row-meta');
+    meta.appendChild(el('span', null, d.owner || '担当—'));
+    meta.appendChild(el('span', 'em', d.right));
+    a.appendChild(meta);
+    card.appendChild(a);
+  });
+  return card;
+}
+
+// 分析■6 商談分析（担当/会社名/日付/ランク/合計…）を日付降順で
+function buildActivityCard(analysis, member) {
+  const card = el('div', 'card activity');
+  card.appendChild(el('h3', null, '直近の商談'));
+  card.appendChild(el('div', 'sub', '採点済みの商談を新しい順に'));
+  const rows = dataRows(findSec(analysis, t => t.startsWith('■6.'))).slice(1)
+    .filter(r => r[1] && (!member || txt(r[0]).includes(member)))
+    .sort((a, b) => String(b[2]).localeCompare(String(a[2])));
+  if (!rows.length) {
+    card.appendChild(el('div', 'empty info', '採点済みの商談がまだありません'));
+    return card;
+  }
+  rows.slice(0, 8).forEach(r => {
+    const a = el('a', 'row-link');
+    a.href = SF_SEARCH + encodeURIComponent(txt(r[1]));
+    a.target = '_blank'; a.rel = 'noopener';
+    const rank = txt(r[3]).trim().toUpperCase();
+    a.appendChild(el('span', 'tag ' + (['A','B','C','D'].includes(rank) ? rank.toLowerCase() : 'b'), rank || '—'));
+    const main = el('div', 'row-main');
+    main.appendChild(el('div', 'co', txt(r[1])));
+    a.appendChild(main);
+    const meta = el('div', 'row-meta');
+    meta.appendChild(el('span', null, txt(r[0])));
+    meta.appendChild(el('span', null, txt(r[2])));
+    if (txt(r[4])) meta.appendChild(el('span', null, txt(r[4]) + '点'));
+    a.appendChild(meta);
+    card.appendChild(a);
+  });
+  return card;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  カード：週次トレンド（表示対象でデータ源が変わる）
+//   1係全体 → 分析■3 活動相関（週/架電数/アポ獲得/転換率）
+//   メンバー → 本人タブ■4 週次トレンド（行＝系列・列＝週の行列）
+// ══════════════════════════════════════════════════════════════════
+function buildTrendCard(own, analysis, isTeam) {
+  const card = el('div', 'card trend');
+  card.appendChild(el('h3', null, '週次トレンド'));
+
+  let labels = [], series = [];
+  if (isTeam) {
+    const rows = dataRows(findSec(analysis, t => t.startsWith('■3.')));
+    const body = rows.slice(1).filter(r => r[0]);
+    labels = body.map(r => txt(r[0]));
+    series = [
+      { name: '架電数', color: 'var(--accent-2)', values: body.map(r => num(r[1])) },
+      { name: 'アポ獲得', color: 'var(--accent)', values: body.map(r => num(r[2])) },
+    ];
+    card.appendChild(el('div', 'sub', '架電数とアポ獲得の推移'));
+  } else {
+    const rows = dataRows(findSec(own, t => t.startsWith('■4.')));
+    labels = (rows[0] || []).slice(1).map(txt);
+    series = rows.slice(1).filter(r => r[0]).map((r, i) => ({
+      name: txt(r[0]),
+      color: i === 0 ? 'var(--accent-2)' : 'var(--accent)',
+      values: r.slice(1).map(num),
+    }));
+    card.appendChild(el('div', 'sub', '商談実施とP2提供の推移'));
+  }
+
+  if (!labels.length || !series.length) {
+    card.appendChild(el('div', 'empty info', '週次データがまだありません'));
+    return card;
+  }
+  // 架電数（数百）とアポ獲得（数件）を同じ軸に載せると後者が真っ平らになるため、
+  // 系列ごとに自分の最大値でスケールした小さな折れ線を積む（各行に最大値を明記する）
+  const plot = el('div', 'plot');
+  series.forEach(s => plot.appendChild(sparkRow(labels, s)));
+  card.appendChild(plot);
+  card.appendChild(el('div', 'legend', labels.length ? labels[0] + ' 〜 ' + labels[labels.length - 1] : ''));
+  return card;
+}
+
+function sparkRow(labels, s) {
+  const wrap = el('div', 'spark');
+  const head = el('div', 'spark-head');
+  const nm = el('span');
+  nm.innerHTML = `<i style="background:${s.color}"></i>${s.name}`;
+  head.appendChild(nm);
+  const last = s.values[s.values.length - 1];
+  head.appendChild(el('span', 'spark-val', `直近 ${last ?? 0}（最大 ${Math.max(...s.values, 0)}）`));
+  wrap.appendChild(head);
+  const box = el('div', 'spark-plot');
+  box.innerHTML = sparkSvg(labels, s);
+  wrap.appendChild(box);
+  return wrap;
+}
+
+function sparkSvg(labels, s) {
+  const W = 300, H = 34, pad = 3;
+  const max = Math.max(1, ...s.values);
+  const n = s.values.length;
+  const x = i => n <= 1 ? W / 2 : pad + (i * (W - pad * 2)) / (n - 1);
+  const y = v => pad + (1 - v / max) * (H - pad * 2);
+  const pts = s.values.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+  const area = `${pad},${H - pad} ${pts} ${x(n - 1)},${H - pad}`;
+  const dots = s.values.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="2" fill="${s.color}"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <polygon points="${area}" fill="${s.color}" opacity=".12"/>
+    <polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}</svg>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  カード：次の約束（スプシの手入力セルを表示するだけ）
+// ══════════════════════════════════════════════════════════════════
+function buildPromiseCard(own, isTeam) {
+  const card = el('div', 'card promise');
+  card.appendChild(el('h3', null, '次の約束'));
+  card.appendChild(el('div', 'sub', 'スプレッドシートの手入力欄より'));
+  const rows = dataRows(findSec(own, t => t.startsWith('■ 手入力セル')));
+  const daily = rows.filter(r => String(r[0] || '').startsWith('【日次】') && txt(r[1]) !== '');
+  if (!daily.length) {
+    card.appendChild(el('div', 'empty info', 'スプシの手入力欄に入力するとここに出ます'));
+    return card;
+  }
+  daily.forEach(r => {
+    const line = el('div', 'line');
+    line.appendChild(el('span', null, txt(r[0]).replace(/^【日次】(次営業日の約束|次の約束)：/, '')));
+    line.appendChild(el('b', null, txt(r[1])));
+    card.appendChild(line);
+  });
+  return card;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  カード：メモ（解釈せずグリッドをそのまま出す）
+// ══════════════════════════════════════════════════════════════════
+function buildMemoCard(rows) {
+  const card = el('div', 'card memo');
+  card.appendChild(el('h3', null, 'メモ'));
+  const body = rows.filter(r => r && r.length && r.some(c => txt(c) !== ''));
+  if (!body.length) {
+    card.appendChild(el('div', 'empty info', 'スプシの「メモ」タブに書くとここに出ます'));
+    return card;
+  }
+  const table = el('table');
+  body.forEach(r => {
+    const tr = el('tr');
+    r.forEach(c => tr.appendChild(el('td', null, txt(c))));
+    table.appendChild(tr);
+  });
+  card.appendChild(table);
+  return card;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  表示対象の切替・時計
+// ══════════════════════════════════════════════════════════════════
+function syncMemberButtons() {
+  document.querySelectorAll('.member-btn').forEach(b => {
+    b.classList.toggle('active', (b.dataset.member || null) === selectedMember);
+  });
+}
+document.querySelectorAll('.member-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const target = btn.dataset.member || null;
+    if (target === selectedMember) return;
+    selectedMember = target;
+    syncMemberButtons();
+    await render();
+  });
+});
+
+function tick() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  document.getElementById('clockT').textContent = `${p(d.getHours())}:${p(d.getMinutes())}`;
+  const dow = ['日', '月', '火', '水', '木', '金', '土'][d.getDay()];
+  document.getElementById('clockD').textContent = `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}（${dow}）`;
+}
+tick();
+setInterval(tick, 20000);
+</script>
+</body>
+</html>
