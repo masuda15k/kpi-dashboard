@@ -53,24 +53,35 @@
   /* ── ログインゲート：全画面を覆う（背後のカードを透けさせない） ── */
   #loginGate {
     position: fixed; inset: 0; z-index: 50;
-    background: var(--bg);
+    background:
+      radial-gradient(ellipse 900px 560px at 50% 36%, var(--accent-tint), transparent 62%),
+      var(--bg);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     text-align: center; padding: 32px;
   }
-  #loginGate .mark {
-    width: 56px; height: 56px; margin: 0 auto 22px; border-radius: 10px;
-    background: var(--text); color: var(--brand-navy);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700; letter-spacing: -.02em;
+  #loginGate .brand-lockup { margin-bottom: 34px; }
+  #loginGate .mark-icon {
+    width: 64px; height: 64px; margin: 0 auto 20px; display: block;
+    border-radius: 14px;
+    filter: drop-shadow(0 10px 26px var(--accent-glow));
   }
-  #loginGate h2 { font-size: 19px; font-weight: 700; margin: 0 0 10px; letter-spacing: .02em; }
+  #loginGate .wordmark-plate {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #fff; border-radius: 10px; padding: 13px 24px;
+    box-shadow: 0 10px 28px rgba(0,0,0,.4);
+  }
+  #loginGate .wordmark { height: 19px; display: block; }
+  #loginGate h2 { font-size: 17px; font-weight: 700; margin: 0 0 10px; letter-spacing: .06em; color: var(--muted); }
   #loginGate p { color: var(--muted); font-size: 12.5px; line-height: 1.8; margin: 0 0 26px; }
-  #loginGate .tagline { color: var(--muted-2); font-size: 11px; margin-top: 30px; letter-spacing: .04em; }
+  #loginGate .tagline { color: var(--muted-2); font-size: 11px; margin-top: 34px; letter-spacing: .04em; }
   #signInBtn {
     background: var(--accent); border: none; color: var(--brand-navy);
-    font-size: 13px; font-weight: 700; padding: 10px 28px; border-radius: 8px; cursor: pointer;
+    font-size: 13px; font-weight: 700; padding: 11px 30px; border-radius: 8px; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(100,192,171,.25);
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
   }
-  #signInBtn:hover { background: #7bd0bc; }
+  #signInBtn:hover { background: #7bd0bc; transform: translateY(-1px); box-shadow: 0 8px 22px rgba(100,192,171,.35); }
+  #signInBtn:active { transform: translateY(0); box-shadow: 0 4px 12px rgba(100,192,171,.25); }
 
   #toast {
     position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 40;
@@ -88,11 +99,9 @@
     padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 15px; overflow: hidden;
   }
   .brand { display: flex; align-items: center; gap: 9px; }
-  .brand .mark {
-    width: 30px; height: 30px; border-radius: 6px; flex: 0 0 auto;
-    background: var(--text); color: var(--brand-navy);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 8px; font-weight: 700; letter-spacing: -.02em;
+  .brand .mark-icon {
+    width: 26px; height: 26px; flex: 0 0 auto; display: block;
+    border-radius: 6px;
   }
   .brand .name { font-size: 12.5px; font-weight: 700; line-height: 1.25; }
   .brand .sub { font-size: 9.5px; color: var(--muted-2); letter-spacing: .06em; }
@@ -284,7 +293,10 @@
 <body>
 
 <div id="loginGate">
-  <div class="mark">Shiki<br>gaku</div>
+  <div class="brand-lockup">
+    <img class="mark-icon" src="assets/shikigaku-mark.png" alt="">
+    <div class="wordmark-plate"><img class="wordmark" src="assets/shikigaku-wordmark.png" alt="Shikigaku"></div>
+  </div>
   <h2>1係 KPIダッシュボード</h2>
   <p>識学Googleアカウントでログインしてください<br>（社外アカウントではログインできません）</p>
   <button id="signInBtn">Googleでログイン</button>
@@ -296,7 +308,7 @@
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-      <div class="mark">Shiki<br>gaku</div>
+      <img class="mark-icon" src="assets/shikigaku-mark.png" alt="">
       <div>
         <div class="name">1係 KPI</div>
         <div class="sub">DASHBOARD</div>
